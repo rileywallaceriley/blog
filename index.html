@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -10,511 +9,579 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; }
-  body {
-    background: #0a0a0a;
-    color: #e8e2d9;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 17px;
-    line-height: 1.7;
-    min-height: 100vh;
-  }
-  img { display: block; max-width: 100%; }
+  body { background: #0a0a0a; color: #e8e2d9; font-family: 'DM Sans', sans-serif; font-size: 17px; line-height: 1.7; min-height: 100vh; }
   a { color: inherit; text-decoration: none; }
 
-nav {
-position: sticky; top: 0; z-index: 100;
-background: rgba(10,10,10,.95);
-backdrop-filter: blur(12px);
-border-bottom: 1px solid #1f1f1f;
-display: flex; align-items: center; justify-content: space-between;
-padding: .9rem 2rem;
-}
-.nav-logo {
-font-family: ‘Bebas Neue’, sans-serif;
-font-size: 1.4rem;
-letter-spacing: .04em;
-color: #e8ff3b;
-cursor: pointer;
-}
-.nav-right { display: flex; gap: 1.2rem; align-items: center; }
-.search-wrap { position: relative; }
-.search-wrap input {
-background: #111111;
-border: 1px solid #1f1f1f;
-border-radius: 4px;
-color: #e8e2d9;
-font-family: ‘DM Sans’, sans-serif;
-font-size: .85rem;
-padding: .45rem .9rem .45rem 2.2rem;
-width: 220px;
-outline: none;
-transition: border-color .2s;
-}
-.search-wrap input:focus { border-color: #e8ff3b; }
-.search-wrap::before {
-content: “⌕”;
-position: absolute; left: .6rem; top: 50%; transform: translateY(-50%);
-color: #555; font-size: 1.1rem; pointer-events: none;
-}
+  /* NAV */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,10,10,.95); backdrop-filter: blur(12px);
+    border-bottom: 1px solid #1f1f1f;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .9rem 2rem;
+  }
+  .nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: .04em; color: #e8ff3b; cursor: pointer; }
+  .nav-right { display: flex; gap: .8rem; align-items: center; }
+  .search-wrap { position: relative; }
+  .search-wrap input {
+    background: #111; border: 1px solid #1f1f1f; border-radius: 4px;
+    color: #e8e2d9; font-family: 'DM Sans', sans-serif; font-size: .85rem;
+    padding: .45rem .9rem .45rem 2.2rem; width: 200px; outline: none; transition: border-color .2s;
+  }
+  .search-wrap input:focus { border-color: #e8ff3b; }
+  .search-wrap::before { content: "⌕"; position: absolute; left: .6rem; top: 50%; transform: translateY(-50%); color: #555; font-size: 1.1rem; pointer-events: none; }
 
-#view-index { animation: fadeUp .4s ease both; }
-#view-post  { animation: fadeUp .3s ease both; }
-@keyframes fadeUp {
-from { opacity: 0; transform: translateY(18px); }
-to   { opacity: 1; transform: translateY(0); }
-}
+  /* FILTER BAR */
+  .filter-bar {
+    max-width: 1200px; margin: 0 auto;
+    padding: 1.2rem 2rem .8rem;
+    display: flex; gap: .5rem; flex-wrap: wrap; align-items: center;
+    border-bottom: 1px solid #1f1f1f;
+  }
+  .filter-label { font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: #444; margin-right: .3rem; }
+  .filter-pill {
+    background: transparent; border: 1px solid #2a2a2a; border-radius: 2px;
+    color: #666; cursor: pointer; font-family: 'DM Sans', sans-serif;
+    font-size: .72rem; font-weight: 500; letter-spacing: .07em;
+    padding: .28rem .75rem; text-transform: uppercase; transition: all .15s;
+  }
+  .filter-pill:hover { border-color: #555; color: #aaa; }
+  .filter-pill.active { background: #e8ff3b; border-color: #e8ff3b; color: #000; }
 
-.masthead {
-padding: 4rem 2rem 2rem;
-border-bottom: 1px solid #1f1f1f;
-max-width: 1200px; margin: 0 auto;
-}
-.masthead-eyebrow {
-font-family: ‘DM Sans’, sans-serif;
-font-size: .7rem;
-font-weight: 500;
-letter-spacing: .18em;
-text-transform: uppercase;
-color: #e8ff3b;
-margin-bottom: .6rem;
-}
-.masthead h1 {
-font-family: ‘Bebas Neue’, sans-serif;
-font-size: clamp(3rem, 8vw, 7rem);
-line-height: .95;
-letter-spacing: .02em;
-color: #e8e2d9;
-}
+  /* ANIMATIONS */
+  #view-index { animation: fadeUp .4s ease both; }
+  #view-post  { animation: fadeUp .3s ease both; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 
-.grid-wrapper {
-max-width: 1200px;
-margin: 0 auto;
-padding: 2.5rem 2rem 4rem;
-}
-.post-grid {
-display: grid;
-grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-gap: 1.5px;
-background: #1f1f1f;
-border: 1px solid #1f1f1f;
-}
-.post-card {
-background: #0a0a0a;
-cursor: pointer;
-padding: 2rem;
-transition: background .15s;
-position: relative;
-overflow: hidden;
-}
-.post-card::after {
-content: ‘’;
-position: absolute; left: 0; bottom: 0;
-width: 0; height: 2px;
-background: #e8ff3b;
-transition: width .25s ease;
-}
-.post-card:hover { background: #111111; }
-.post-card:hover::after { width: 100%; }
+  /* MASTHEAD */
+  .masthead { padding: 3rem 2rem 2rem; border-bottom: 1px solid #1f1f1f; max-width: 1200px; margin: 0 auto; }
+  .masthead-eyebrow { font-size: .7rem; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: #e8ff3b; margin-bottom: .6rem; }
+  .masthead h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 8vw, 7rem); line-height: .95; letter-spacing: .02em; color: #e8e2d9; }
 
-.card-date {
-font-size: .72rem;
-letter-spacing: .1em;
-text-transform: uppercase;
-color: #555;
-margin-bottom: .6rem;
-}
-.card-title {
-font-family: ‘DM Serif Display’, Georgia, serif;
-font-size: 1.25rem;
-line-height: 1.3;
-color: #e8e2d9;
-margin-bottom: .9rem;
-}
-.card-excerpt {
-font-size: .85rem;
-color: #888;
-line-height: 1.6;
-display: -webkit-box;
--webkit-line-clamp: 3;
--webkit-box-orient: vertical;
-overflow: hidden;
-}
-.card-arrow {
-margin-top: 1.2rem;
-font-size: .75rem;
-letter-spacing: .12em;
-text-transform: uppercase;
-color: #e8ff3b;
-font-weight: 500;
-}
+  /* GRID */
+  .grid-wrapper { max-width: 1200px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+  .post-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5px; background: #1f1f1f; border: 1px solid #1f1f1f; }
+  .post-card { background: #0a0a0a; cursor: pointer; padding: 2rem; transition: background .15s; position: relative; overflow: hidden; }
+  .post-card::after { content: ''; position: absolute; left: 0; bottom: 0; width: 0; height: 2px; background: #e8ff3b; transition: width .25s ease; }
+  .post-card:hover { background: #111; }
+  .post-card:hover::after { width: 100%; }
 
-.post-view {
-max-width: 760px;
-margin: 0 auto;
-padding: 3rem 2rem 6rem;
-}
-.back-btn {
-display: inline-flex; align-items: center; gap: .4rem;
-font-size: .75rem;
-font-weight: 500;
-letter-spacing: .1em;
-text-transform: uppercase;
-color: #555;
-cursor: pointer;
-margin-bottom: 3rem;
-transition: color .15s;
-}
-.back-btn:hover { color: #e8ff3b; }
-.post-meta-top {
-font-size: .72rem;
-letter-spacing: .12em;
-text-transform: uppercase;
-color: #e8ff3b;
-margin-bottom: 1rem;
-}
-.post-title {
-font-family: ‘DM Serif Display’, Georgia, serif;
-font-size: clamp(1.8rem, 4vw, 3rem);
-line-height: 1.15;
-color: #e8e2d9;
-margin-bottom: 2rem;
-}
-.post-divider {
-width: 40px; height: 2px;
-background: #e8ff3b;
-margin-bottom: 2.5rem;
-}
-.post-body {
-font-size: 1.05rem;
-line-height: 1.85;
-color: #c8c4bc;
-}
-.post-body p { margin-bottom: 1.5rem; }
-.post-body p:first-child::first-letter {
-font-family: ‘Bebas Neue’, sans-serif;
-font-size: 4.5rem;
-line-height: .8;
-float: left;
-margin: .05em .12em 0 0;
-color: #e8ff3b;
-}
+  .card-meta { display: flex; align-items: center; gap: .6rem; margin-bottom: .6rem; flex-wrap: wrap; }
+  .card-date { font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: #555; }
+  .card-source { font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: #e8ff3b; opacity: .7; font-weight: 500; }
+  .card-source::before { content: '·'; margin-right: .4rem; color: #333; }
 
-.state-msg {
-text-align: center;
-padding: 6rem 2rem;
-color: #555;
-font-size: 1rem;
-}
-.state-msg span {
-display: block;
-font-family: ‘Bebas Neue’, sans-serif;
-font-size: 3rem;
-color: #1f1f1f;
-margin-bottom: 1rem;
-}
+  .card-title { font-family: 'DM Serif Display', Georgia, serif; font-size: 1.25rem; line-height: 1.3; color: #e8e2d9; margin-bottom: .9rem; min-height: 2.6rem; transition: opacity .3s; }
+  .card-title.cleaning { opacity: .35; }
+  .card-excerpt { font-size: .85rem; color: #888; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .card-arrow { margin-top: 1.2rem; font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; color: #e8ff3b; font-weight: 500; }
 
-#loading-bar {
-position: fixed; top: 0; left: 0;
-height: 2px; background: #e8ff3b;
-width: 0%; transition: width .4s ease;
-z-index: 9999;
-}
+  /* POST VIEW */
+  .post-view { max-width: 760px; margin: 0 auto; padding: 3rem 2rem 6rem; }
+  .back-btn { display: inline-flex; align-items: center; gap: .4rem; font-size: .75rem; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: #555; cursor: pointer; margin-bottom: 3rem; transition: color .15s; }
+  .back-btn:hover { color: #e8ff3b; }
 
-#scroll-top {
-position: fixed; bottom: 2rem; right: 2rem;
-background: #e8ff3b; color: #000;
-border: none; cursor: pointer;
-width: 40px; height: 40px;
-font-size: 1.2rem;
-display: none; align-items: center; justify-content: center;
-transition: opacity .2s;
-}
-#scroll-top.visible { display: flex; }
+  .post-meta-top { display: flex; align-items: center; gap: .8rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .post-date { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: #555; }
+  .post-source-badge {
+    font-size: .68rem; letter-spacing: .1em; text-transform: uppercase;
+    font-weight: 600; color: #000; background: #e8ff3b;
+    padding: .18rem .55rem; border-radius: 2px;
+  }
 
-.modal-bg {
-position: fixed; inset: 0;
-background: rgba(0,0,0,.85);
-display: flex; align-items: center; justify-content: center;
-z-index: 200;
-}
-.modal {
-background: #111111;
-border: 1px solid #1f1f1f;
-padding: 2.5rem;
-max-width: 500px; width: 90%;
-}
-.modal h2 {
-font-family: ‘Bebas Neue’, sans-serif;
-font-size: 1.8rem;
-margin-bottom: .5rem;
-color: #e8ff3b;
-}
-.modal p { font-size: .88rem; color: #888; margin-bottom: 1.5rem; }
-.modal input {
-width: 100%;
-background: #0a0a0a;
-border: 1px solid #1f1f1f;
-color: #e8e2d9;
-font-family: ‘DM Sans’, sans-serif;
-font-size: .9rem;
-padding: .7rem 1rem;
-margin-bottom: 1rem;
-outline: none;
-}
-.modal input:focus { border-color: #e8ff3b; }
-.modal-btns { display: flex; gap: .8rem; justify-content: flex-end; }
-.btn {
-background: #e8ff3b; color: #000;
-border: none; cursor: pointer;
-font-family: ‘DM Sans’, sans-serif; font-size: .85rem; font-weight: 600;
-letter-spacing: .06em; text-transform: uppercase;
-padding: .65rem 1.4rem;
-transition: opacity .15s;
-}
-.btn:hover { opacity: .85; }
-.btn-ghost {
-background: transparent;
-border: 1px solid #1f1f1f;
-color: #888;
-}
-.btn-ghost:hover { border-color: #555; color: #e8e2d9; opacity: 1; }
+  .post-share {
+    display: inline-flex; align-items: center; gap: .35rem;
+    font-size: .7rem; letter-spacing: .1em; text-transform: uppercase;
+    color: #444; cursor: pointer; margin-left: auto;
+    transition: color .15s; border: 1px solid #1f1f1f; padding: .25rem .6rem; border-radius: 2px;
+  }
+  .post-share:hover { color: #e8ff3b; border-color: #e8ff3b; }
+  .post-share.copied { color: #e8ff3b; border-color: #e8ff3b; }
 
-@media (max-width: 600px) {
-nav { padding: .8rem 1rem; }
-.search-wrap input { width: 150px; }
-.masthead { padding: 2.5rem 1rem 1.5rem; }
-.grid-wrapper { padding: 1.5rem 0 3rem; }
-.post-card { padding: 1.5rem; }
-.post-view { padding: 2rem 1.2rem 4rem; }
-}
+  .post-title { font-family: 'DM Serif Display', Georgia, serif; font-size: clamp(1.8rem, 4vw, 3rem); line-height: 1.15; color: #e8e2d9; margin-bottom: 2rem; }
+  .post-divider { width: 40px; height: 2px; background: #e8ff3b; margin-bottom: 2.5rem; }
+  .post-body { font-size: 1.05rem; line-height: 1.85; color: #c8c4bc; }
+  .post-body p { margin-bottom: 1.5rem; }
+  .post-body p:first-child::first-letter { font-family: 'Bebas Neue', sans-serif; font-size: 4.5rem; line-height: .8; float: left; margin: .05em .12em 0 0; color: #e8ff3b; }
+
+  /* SKELETON */
+  .ai-badge { display: inline-flex; align-items: center; gap: .4rem; font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: #e8ff3b; margin-bottom: 2rem; opacity: .75; }
+  .ai-badge::before { content: '◆'; font-size: .5rem; animation: pulse 1.4s ease infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.15} }
+  .skeleton-line { height: 13px; border-radius: 2px; margin-bottom: 11px; background: linear-gradient(90deg, #181818 25%, #222 50%, #181818 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+  /* STATE */
+  .state-msg { text-align: center; padding: 6rem 2rem; color: #555; }
+  .state-msg span { display: block; font-family: 'Bebas Neue', sans-serif; font-size: 3rem; color: #1f1f1f; margin-bottom: 1rem; }
+
+  /* LOADING / SCROLL */
+  #loading-bar { position: fixed; top: 0; left: 0; height: 2px; background: #e8ff3b; width: 0%; transition: width .4s ease; z-index: 9999; }
+  #scroll-top { position: fixed; bottom: 2rem; right: 2rem; background: #e8ff3b; color: #000; border: none; cursor: pointer; width: 40px; height: 40px; font-size: 1.2rem; display: none; align-items: center; justify-content: center; }
+  #scroll-top.visible { display: flex; }
+
+  /* MODALS */
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.87); display: flex; align-items: center; justify-content: center; z-index: 200; }
+  .modal { background: #111; border: 1px solid #1f1f1f; padding: 2.5rem; max-width: 520px; width: 90%; }
+  .modal h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; margin-bottom: .5rem; color: #e8ff3b; }
+  .modal p { font-size: .88rem; color: #888; margin-bottom: 1.2rem; line-height: 1.6; }
+  .modal label { font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: #555; display: block; margin-bottom: .4rem; }
+  .modal input {
+    width: 100%; background: #0a0a0a; border: 1px solid #1f1f1f;
+    color: #e8e2d9; font-family: 'DM Sans', sans-serif;
+    font-size: .9rem; padding: .7rem 1rem; margin-bottom: 1rem; outline: none;
+  }
+  .modal input:focus { border-color: #e8ff3b; }
+  .modal-btns { display: flex; gap: .8rem; justify-content: flex-end; flex-wrap: wrap; margin-top: .5rem; }
+  .btn { background: #e8ff3b; color: #000; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: .85rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: .65rem 1.4rem; transition: opacity .15s; }
+  .btn:hover { opacity: .85; }
+  .btn-ghost { background: transparent; border: 1px solid #1f1f1f; color: #888; }
+  .btn-ghost:hover { border-color: #555; color: #e8e2d9; opacity: 1; }
+  .btn-danger { background: transparent; border: 1px solid #ff4444; color: #ff4444; }
+
+  .source-list { margin-bottom: 1rem; }
+  .source-row { display: flex; gap: .5rem; align-items: center; margin-bottom: .5rem; }
+  .source-row input:first-child { width: 130px; flex-shrink: 0; }
+  .source-row input:last-of-type { flex: 1; }
+  .source-row button { background: transparent; border: 1px solid #333; color: #555; cursor: pointer; font-size: .8rem; padding: .4rem .6rem; transition: all .15s; white-space: nowrap; }
+  .source-row button:hover { border-color: #ff4444; color: #ff4444; }
+  .add-source-btn { font-size: .75rem; color: #555; background: transparent; border: 1px dashed #2a2a2a; cursor: pointer; padding: .4rem 1rem; width: 100%; text-align: center; transition: all .15s; margin-bottom: 1rem; }
+  .add-source-btn:hover { border-color: #e8ff3b; color: #e8ff3b; }
+
+  @media (max-width: 600px) {
+    nav { padding: .8rem 1rem; }
+    .search-wrap input { width: 130px; }
+    .filter-bar { padding: 1rem 1rem .6rem; }
+    .masthead { padding: 2rem 1rem 1.5rem; }
+    .grid-wrapper { padding: 1.5rem 0 3rem; }
+    .post-card { padding: 1.5rem; }
+    .post-view { padding: 2rem 1.2rem 4rem; }
+  }
 </style>
-
 </head>
 <body>
 
 <div id="loading-bar"></div>
 
-<!-- NAV -->
-
 <nav>
-  <div class="nav-logo" onclick="showIndex()">Riley Wallace</div>
+  <div class="nav-logo" onclick="goHome()">Riley Wallace</div>
   <div class="nav-right">
     <div class="search-wrap">
       <input type="text" id="search-input" placeholder="Search posts…" oninput="filterPosts()">
     </div>
-    <button class="btn btn-ghost" onclick="openConfig()" style="font-size:.7rem;padding:.4rem .8rem;">⚙ Source</button>
+    <button class="btn btn-ghost" onclick="openSourcesModal()" style="font-size:.7rem;padding:.4rem .8rem;">⚙ Sources</button>
+    <button class="btn btn-ghost" onclick="openKeyModal()" style="font-size:.7rem;padding:.4rem .8rem;" id="ai-btn">⚡ AI</button>
   </div>
 </nav>
 
-<!-- MAIN -->
-
 <main id="app"></main>
-
-<!-- SCROLL TOP -->
-
 <button id="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
-<!-- CONFIG MODAL -->
-
-<div class="modal-bg" id="config-modal" style="display:none;">
+<!-- SOURCES MODAL -->
+<div class="modal-bg" id="sources-modal" style="display:none;">
   <div class="modal">
-    <h2>JSON Source</h2>
-    <p>Paste the direct URL to your JSON file. For Google Drive, use the direct download link format:<br>
-    <code style="font-size:.78rem;color:var(--accent)">https://drive.google.com/uc?export=download&amp;id=FILE_ID</code></p>
-    <input type="text" id="json-url-input" placeholder="https://…" />
+    <h2>Sources</h2>
+    <p>Add a name and raw JSON URL for each source. Name will appear as a label on each post.</p>
+    <div class="source-list" id="source-list"></div>
+    <button class="add-source-btn" onclick="addSourceRow()">+ Add Source</button>
     <div class="modal-btns">
-      <button class="btn btn-ghost" onclick="closeConfig()">Cancel</button>
-      <button class="btn" onclick="loadFromUrl()">Load</button>
+      <button class="btn btn-ghost" onclick="closeSourcesModal()">Cancel</button>
+      <button class="btn" onclick="saveSources()">Save & Reload</button>
+    </div>
+  </div>
+</div>
+
+<!-- API KEY MODAL -->
+<div class="modal-bg" id="key-modal" style="display:none;">
+  <div class="modal">
+    <h2>AI Cleaning</h2>
+    <p>Enter your Anthropic API key to enable automatic typo and formatting fixes. Stored only in your browser's local storage.</p>
+    <input type="password" id="api-key-input" placeholder="sk-ant-…" />
+    <div class="modal-btns">
+      <button class="btn btn-danger" onclick="clearApiKey()" style="margin-right:auto;">Clear Key</button>
+      <button class="btn btn-ghost" onclick="closeKeyModal()">Cancel</button>
+      <button class="btn" onclick="saveApiKey()">Save & Enable</button>
     </div>
   </div>
 </div>
 
 <script>
-// ── STATE ──────────────────────────────────────────────────────
-const DEFAULT_URL = 'https://raw.githubusercontent.com/rileywallaceriley/blog/main/posts_complete.json';
-let allPosts = [];
-let filteredPosts = [];
-let currentQuery = '';
-
-// ── SAMPLE DATA (shown before any JSON is loaded) ──────────────
-const SAMPLE = [
-  {
-    post_name: "kanye-west-albums-ranked-worst-best",
-    date: "2024-03-18 13:15:17",
-    title: "Kanye West Albums Ranked Worst to Best — Can't Tell Us Nothing",
-    clean_content: `There's no disputing that Kanye West has had one of the wilder story arcs in modern music history. Never one to hold his tongue, his timeline has seen him gradually evolve from the protagonist of an endearing underdog story to a seemingly unstable, yet admirably uncancellable villain. However, above all the personal drama the producer, rapper and fashion mogul has very publicly endured since his debut album The College Dropout dropped 20 years ago, his music has remained his constant.\n\nIn a world where antics and relevance go hand in hand, Ye has made a habit of dying on very unpopular hills, making it increasingly difficult for some to separate the art from the artist. That, of course, is a very mild way to put it. Still, his discography remains one of the most celebrated and influential in Hip Hop.\n\nMy Beautiful Dark Twisted Fantasy stands as perhaps the most fully fleshed-out, evolved example of Ye's artistic and conceptual genius. Far removed from his "Old Kanye" aesthetic, and not yet as polarizing as Yeezus, this album best showcases why Ye is widely regarded as one of the most influential artists of his time.`
-  }
+// ── DEFAULT SOURCES ─────────────────────────────────────────────
+const DEFAULT_SOURCES = [
+  { name: 'HipHopDX', url: 'https://raw.githubusercontent.com/rileywallaceriley/blog/main/posts_cleaned.json' },
+  { name: 'AAHIPHOP', url: 'https://raw.githubusercontent.com/rileywallaceriley/blog/main/posts_aahiphop.json' },
+  { name: 'Exclaim',  url: 'https://raw.githubusercontent.com/rileywallaceriley/blog/main/posts_exclaim.json' },
+  { name: 'XXL',      url: 'https://raw.githubusercontent.com/rileywallaceriley/blog/main/posts_xxl.json' },
 ];
 
-// ── HELPERS ────────────────────────────────────────────────────
+// ── STATE ───────────────────────────────────────────────────────
+let allPosts      = [];
+let filteredPosts = [];
+let currentQuery  = '';
+let activeSource  = 'All';
+const titleCache   = new Map();
+const contentCache = new Map();
+
+// ── SOURCES ─────────────────────────────────────────────────────
+function getSources() {
+  try {
+    const saved = localStorage.getItem('rw_sources');
+    return saved ? JSON.parse(saved) : DEFAULT_SOURCES;
+  } catch { return DEFAULT_SOURCES; }
+}
+
+function getApiKey() { return localStorage.getItem('rw_api_key') || ''; }
+
+function updateAIBtn() {
+  const btn = document.getElementById('ai-btn');
+  if (btn) btn.style.color = getApiKey() ? '#e8ff3b' : '#888';
+}
+
+// ── DATE / TEXT HELPERS ─────────────────────────────────────────
 function formatDate(str) {
-  const d = new Date(str);
-  return d.toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+  return new Date(str).toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
 }
 
-function excerpt(text, len = 160) {
+function excerpt(text, len=160) {
   if (!text) return '';
-  const clean = text.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-  return clean.length > len ? clean.slice(0, len).replace(/\s\S+$/, '') + '…' : clean;
+  const c = text.replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim();
+  return c.length > len ? c.slice(0, len).replace(/\s\S+$/, '') + '…' : c;
 }
 
-function contentToHTML(text) {
+function rawToHTML(text) {
   if (!text) return '';
-  const clean = text.replace(/<https?:\/\/[^>]+>/g, '').replace(/<[^>]+>/g, '');
-  return clean.split(/\n\n+/).map(p => `<p>${p.trim()}</p>`).join('');
+  const c = text.replace(/<https?:\/\/[^>]+>/g,'').replace(/<[^>]+>/g,'').trim();
+  return c.split(/\n\n+/).map(p=>`<p>${p.trim()}</p>`).filter(p=>p!=='<p></p>').join('');
 }
 
-// ── LOADING BAR ────────────────────────────────────────────────
 function setBar(pct) {
   const b = document.getElementById('loading-bar');
   b.style.width = pct + '%';
-  if (pct >= 100) setTimeout(() => b.style.width = '0%', 600);
+  if (pct >= 100) setTimeout(()=>{ b.style.width='0%'; }, 700);
 }
 
-// ── RENDER INDEX ───────────────────────────────────────────────
-function showIndex() {
+function skeletonHTML() {
+  return [100,85,95,70,90,80,60,88,75,92,68,83].map((w,i) =>
+    `<div class="skeleton-line" style="width:${w}%;animation-delay:${i*0.07}s"></div>`
+  ).join('');
+}
+
+// ── URL / SHARING ───────────────────────────────────────────────
+function getHashPost() {
+  const h = window.location.hash;
+  if (h.startsWith('#post/')) return decodeURIComponent(h.slice(6));
+  return null;
+}
+
+function setHashPost(postName) {
+  history.pushState(null, '', '#post/' + encodeURIComponent(postName));
+}
+
+function clearHash() {
+  history.pushState(null, '', window.location.pathname);
+}
+
+function copyShareLink(postName) {
+  const url = window.location.origin + window.location.pathname + '#post/' + encodeURIComponent(postName);
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('share-btn');
+    if (btn) { btn.textContent = '✓ Copied'; btn.classList.add('copied'); }
+  });
+}
+
+// ── CLAUDE API ──────────────────────────────────────────────────
+async function callClaude(system, user) {
+  const key = getApiKey();
+  if (!key) return null;
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 4096, system, messages: [{ role: 'user', content: user }] })
+    });
+    if (!res.ok) return null;
+    const d = await res.json();
+    return d.content?.[0]?.text?.trim() || null;
+  } catch { return null; }
+}
+
+async function cleanTitle(post) {
+  if (titleCache.has(post.post_name)) return titleCache.get(post.post_name);
+  const r = await callClaude('Fix only typos, spacing and punctuation in this title. Return ONLY the corrected title.', post.title);
+  const v = r || post.title;
+  titleCache.set(post.post_name, v);
+  return v;
+}
+
+async function cleanContent(post) {
+  if (contentCache.has(post.post_name)) return contentCache.get(post.post_name);
+  const raw = post.clean_content || post.content || '';
+  const stripped = raw.replace(/<https?:\/\/[^>]+>/g,'').replace(/<[^>]+>/g,'').trim();
+  const r = await callClaude('Fix typos, spacing, run-on words and broken punctuation. Preserve voice. Paragraphs separated by blank lines. Return ONLY cleaned text.', stripped);
+  const html = r ? r.split(/\n\n+/).map(p=>`<p>${p.trim()}</p>`).filter(p=>p!=='<p></p>').join('') : rawToHTML(raw);
+  contentCache.set(post.post_name, html);
+  return html;
+}
+
+// ── LAZY TITLE OBSERVER ─────────────────────────────────────────
+let titleObserver = null;
+
+function observeTitles() {
+  if (!getApiKey()) return;
+  if (titleObserver) titleObserver.disconnect();
+  titleObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const el = entry.target;
+      const idx = parseInt(el.dataset.idx, 10);
+      const post = filteredPosts[idx];
+      if (!post || titleCache.has(post.post_name)) return;
+      titleObserver.unobserve(el);
+      el.classList.add('cleaning');
+      cleanTitle(post).then(cleaned => { el.textContent = cleaned; el.classList.remove('cleaning'); });
+    });
+  }, { rootMargin: '300px' });
+  document.querySelectorAll('.card-title[data-idx]').forEach(el => titleObserver.observe(el));
+}
+
+// ── FILTER BAR ──────────────────────────────────────────────────
+function renderFilterBar() {
+  const sources = ['All', ...new Set(allPosts.map(p => p.source).filter(Boolean))];
+  const pills = sources.map(s =>
+    `<button class="filter-pill${activeSource===s?' active':''}" onclick="setSource('${s}')">${s}</button>`
+  ).join('');
+  return `<div class="filter-bar"><span class="filter-label">Source</span>${pills}</div>`;
+}
+
+function setSource(name) {
+  activeSource = name;
+  applyFilters();
+}
+
+// ── FILTER / SEARCH ─────────────────────────────────────────────
+function applyFilters() {
+  const q = currentQuery;
+  filteredPosts = allPosts.filter(p => {
+    const matchSource = activeSource === 'All' || p.source === activeSource;
+    const matchQuery  = !q ||
+      p.title.toLowerCase().includes(q) ||
+      (p.clean_content || p.content || '').toLowerCase().includes(q);
+    return matchSource && matchQuery;
+  });
+  renderIndex();
+}
+
+function filterPosts() {
+  currentQuery = document.getElementById('search-input').value.toLowerCase().trim();
+  applyFilters();
+}
+
+// ── RENDER INDEX ────────────────────────────────────────────────
+function goHome() {
+  clearHash();
   document.getElementById('search-input').value = '';
   currentQuery = '';
+  activeSource = 'All';
   filteredPosts = [...allPosts];
   renderIndex();
 }
 
 function renderIndex() {
   const app = document.getElementById('app');
-  const posts = filteredPosts;
 
   if (allPosts.length === 0) {
     app.innerHTML = `
-      <div class="masthead">
-        <div class="masthead-eyebrow">Writing Archive</div>
-        <h1>WRITING ARCHIVE</h1>
-      </div>
-      <div class="state-msg">
-        <span>NO DATA</span>
-        Click <strong>⚙ Source</strong> to load your JSON file, or add the URL to <code>DEFAULT_URL</code> in the script.
-        <br><br>
-        <button class="btn" onclick="loadSample()">Load Sample Post</button>
-      </div>`;
+      <div class="masthead"><div class="masthead-eyebrow">Writing Archive</div><h1>WRITING ARCHIVE</h1></div>
+      <div class="state-msg"><span>NO DATA</span>Click <strong>⚙ Sources</strong> to configure your JSON files.</div>`;
     return;
   }
 
-  const cards = posts.map((p, i) => `
-    <div class="post-card" onclick="showPost(${i})" style="animation-delay:${(i % 12) * 0.04}s">
-      <div class="card-date">${formatDate(p.date)}</div>
-      <div class="card-title">${p.title}</div>
-      <div class="card-excerpt">${excerpt(p.clean_content || p.content)}</div>
-      <div class="card-arrow">Read →</div>
-    </div>`).join('');
-
-  const count = posts.length;
+  const count = filteredPosts.length;
   const total = allPosts.length;
   const subtitle = currentQuery
-    ? `${count} result${count !== 1 ? 's' : ''} for "${currentQuery}"`
-    : `${total} post${total !== 1 ? 's' : ''}`;
+    ? `${count} result${count!==1?'s':''} for "${currentQuery}"`
+    : activeSource !== 'All' ? `${count} post${count!==1?'s':''} — ${activeSource}`
+    : `${total} post${total!==1?'s':''}`;
+
+  const cards = filteredPosts.map((p, i) => {
+    const title = titleCache.get(p.post_name) || p.title;
+    const sourceTag = p.source ? `<span class="card-source">${p.source}</span>` : '';
+    return `
+      <div class="post-card" onclick="openPost('${encodeURIComponent(p.post_name)}')">
+        <div class="card-meta"><span class="card-date">${formatDate(p.date)}</span>${sourceTag}</div>
+        <div class="card-title" data-idx="${i}">${title}</div>
+        <div class="card-excerpt">${excerpt(p.clean_content || p.content)}</div>
+        <div class="card-arrow">Read →</div>
+      </div>`;
+  }).join('');
 
   app.innerHTML = `
     <div id="view-index">
-      <div class="masthead">
-        <div class="masthead-eyebrow">${subtitle}</div>
-        <h1>WRITING ARCHIVE</h1>
-      </div>
+      <div class="masthead"><div class="masthead-eyebrow">${subtitle}</div><h1>WRITING ARCHIVE</h1></div>
+      ${renderFilterBar()}
       <div class="grid-wrapper">
-        ${posts.length ? `<div class="post-grid">${cards}</div>` : `<div class="state-msg"><span>0</span>No posts match your search.</div>`}
+        ${count ? `<div class="post-grid">${cards}</div>` : `<div class="state-msg"><span>0</span>No posts match.</div>`}
       </div>
     </div>`;
+
+  requestAnimationFrame(observeTitles);
 }
 
-// ── RENDER POST ────────────────────────────────────────────────
-function showPost(idx) {
-  const p = filteredPosts[idx];
-  if (!p) return;
+// ── OPEN / RENDER POST ──────────────────────────────────────────
+function openPost(encodedName) {
+  const postName = decodeURIComponent(encodedName);
+  const post = allPosts.find(p => p.post_name === postName);
+  if (!post) return;
+  setHashPost(postName);
+  renderPost(post);
+}
+
+async function renderPost(p) {
   window.scrollTo(0, 0);
-  const body = contentToHTML(p.clean_content || p.content);
+  const hasKey = !!getApiKey();
+  const cachedTitle   = titleCache.get(p.post_name) || p.title;
+  const cachedContent = contentCache.get(p.post_name);
+  const sourceBadge   = p.source ? `<span class="post-source-badge">${p.source}</span>` : '';
+
   document.getElementById('app').innerHTML = `
     <div id="view-post">
       <div class="post-view">
-        <div class="back-btn" onclick="showIndex()">← All Posts</div>
-        <div class="post-meta-top">${formatDate(p.date)}</div>
-        <h1 class="post-title">${p.title}</h1>
+        <div class="back-btn" onclick="goHome()">← All Posts</div>
+        <div class="post-meta-top">
+          <span class="post-date">${formatDate(p.date)}</span>
+          ${sourceBadge}
+          <button class="post-share" id="share-btn" onclick="copyShareLink('${p.post_name}')">↗ Share</button>
+        </div>
+        <h1 class="post-title" id="post-title-el">${cachedTitle}</h1>
         <div class="post-divider"></div>
-        <div class="post-body">${body}</div>
+        ${hasKey && !cachedContent
+          ? `<div class="ai-badge">AI Cleaning</div><div id="post-body-el">${skeletonHTML()}</div>`
+          : `<div class="post-body" id="post-body-el">${cachedContent || rawToHTML(p.clean_content || p.content)}</div>`
+        }
       </div>
     </div>`;
+
+  if (!hasKey) return;
+  const tasks = [];
+  if (!titleCache.has(p.post_name)) {
+    tasks.push(cleanTitle(p).then(cleaned => {
+      const el = document.getElementById('post-title-el');
+      if (el) el.textContent = cleaned;
+    }));
+  }
+  if (!cachedContent) {
+    tasks.push(cleanContent(p).then(html => {
+      const el = document.getElementById('post-body-el');
+      if (el) { el.className = 'post-body'; el.innerHTML = html; }
+    }));
+  }
+  await Promise.all(tasks);
 }
 
-// ── SEARCH ─────────────────────────────────────────────────────
-function filterPosts() {
-  const q = document.getElementById('search-input').value.toLowerCase().trim();
-  currentQuery = q;
-  if (!q) {
-    filteredPosts = [...allPosts];
-  } else {
-    filteredPosts = allPosts.filter(p =>
-      p.title.toLowerCase().includes(q) ||
-      (p.clean_content || p.content || '').toLowerCase().includes(q)
-    );
+// ── LOAD SOURCES ────────────────────────────────────────────────
+async function loadAllSources() {
+  const sources = getSources();
+  allPosts = [];
+  setBar(10);
+
+  const results = await Promise.allSettled(
+    sources.map(async (src) => {
+      try {
+        const res = await fetch(src.url);
+        if (!res.ok) return [];
+        const data = await res.json();
+        const posts = Array.isArray(data) ? data : (data.posts || data.data || []);
+        return posts.map(p => ({ ...p, source: p.source || src.name }));
+      } catch { return []; }
+    })
+  );
+
+  results.forEach(r => { if (r.status === 'fulfilled') allPosts.push(...r.value); });
+  allPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
+  filteredPosts = [...allPosts];
+  setBar(100);
+
+  // Check for deep-linked post
+  const linkedPost = getHashPost();
+  if (linkedPost) {
+    const post = allPosts.find(p => p.post_name === linkedPost);
+    if (post) { renderPost(post); return; }
   }
+
   renderIndex();
 }
 
-// ── LOAD JSON ──────────────────────────────────────────────────
-async function loadJSON(url) {
-  setBar(30);
-  try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    setBar(90);
-    allPosts = Array.isArray(data) ? data : (data.posts || data.data || []);
-    allPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
-    filteredPosts = [...allPosts];
-    setBar(100);
-    renderIndex();
-    localStorage.setItem('dx_json_url', url);
-  } catch (e) {
-    setBar(100);
-    alert(`Could not load JSON:\n${e.message}\n\nMake sure the URL is publicly accessible and returns valid JSON.`);
+// ── SOURCES MODAL ───────────────────────────────────────────────
+function openSourcesModal() {
+  const sources = getSources();
+  const list = document.getElementById('source-list');
+  list.innerHTML = '';
+  sources.forEach(s => addSourceRow(s.name, s.url));
+  document.getElementById('sources-modal').style.display = 'flex';
+}
+function closeSourcesModal() { document.getElementById('sources-modal').style.display = 'none'; }
+
+function addSourceRow(name='', url='') {
+  const list = document.getElementById('source-list');
+  const row = document.createElement('div');
+  row.className = 'source-row';
+  row.innerHTML = `
+    <input type="text" placeholder="Name" value="${name}" style="width:120px;flex-shrink:0">
+    <input type="text" placeholder="https://raw.githubusercontent.com/…" value="${url}" style="flex:1">
+    <button onclick="this.parentElement.remove()">✕</button>`;
+  list.appendChild(row);
+}
+
+function saveSources() {
+  const rows = document.querySelectorAll('.source-row');
+  const sources = [];
+  rows.forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    const name = inputs[0].value.trim();
+    const url  = inputs[1].value.trim();
+    if (name && url) sources.push({ name, url });
+  });
+  if (sources.length) {
+    localStorage.setItem('rw_sources', JSON.stringify(sources));
+    closeSourcesModal();
+    titleCache.clear(); contentCache.clear();
+    loadAllSources();
   }
 }
 
-function loadSample() {
-  allPosts = SAMPLE;
-  filteredPosts = [...SAMPLE];
+// ── API KEY MODAL ───────────────────────────────────────────────
+function openKeyModal() { document.getElementById('api-key-input').value = getApiKey(); document.getElementById('key-modal').style.display = 'flex'; }
+function closeKeyModal() { document.getElementById('key-modal').style.display = 'none'; }
+function saveApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (key) localStorage.setItem('rw_api_key', key);
+  closeKeyModal(); titleCache.clear(); contentCache.clear();
+  updateAIBtn(); renderIndex();
+}
+function clearApiKey() {
+  localStorage.removeItem('rw_api_key');
+  closeKeyModal(); titleCache.clear(); contentCache.clear();
+  updateAIBtn(); renderIndex();
+}
+
+// ── BACK / FORWARD ──────────────────────────────────────────────
+window.addEventListener('popstate', () => {
+  const linked = getHashPost();
+  if (linked) {
+    const post = allPosts.find(p => p.post_name === linked);
+    if (post) { renderPost(post); return; }
+  }
   renderIndex();
-}
-
-// ── CONFIG MODAL ───────────────────────────────────────────────
-function openConfig() {
-  const saved = localStorage.getItem('dx_json_url') || DEFAULT_URL;
-  document.getElementById('json-url-input').value = saved;
-  document.getElementById('config-modal').style.display = 'flex';
-}
-function closeConfig() {
-  document.getElementById('config-modal').style.display = 'none';
-}
-function loadFromUrl() {
-  const url = document.getElementById('json-url-input').value.trim();
-  if (!url) return;
-  closeConfig();
-  loadJSON(url);
-}
-
-// ── SCROLL TOP ─────────────────────────────────────────────────
-window.addEventListener('scroll', () => {
-  const btn = document.getElementById('scroll-top');
-  btn.classList.toggle('visible', window.scrollY > 500);
 });
 
-// ── INIT ───────────────────────────────────────────────────────
-(function init() {
-  const url = DEFAULT_URL || localStorage.getItem('dx_json_url');
-  if (url) {
-    loadJSON(url);
-  } else {
-    renderIndex();
-  }
-})();
-</script>
+// ── SCROLL TOP ──────────────────────────────────────────────────
+window.addEventListener('scroll', () => {
+  document.getElementById('scroll-top').classList.toggle('visible', window.scrollY > 500);
+});
 
+// ── INIT ─────────────────────────────────────────────────────────
+updateAIBtn();
+loadAllSources();
+</script>
 </body>
 </html>
