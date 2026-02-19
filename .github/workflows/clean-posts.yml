@@ -42,7 +42,6 @@ jobs:
           const sleep = ms => new Promise(r => setTimeout(r, ms));
 
           // ── REGEX PRE-CLEAN ──────────────────────────────────────────
-          // Fixes systematic CMS encoding artifacts before AI sees the text
           function regexClean(text) {
             if (!text) return '';
             let t = text;
@@ -51,51 +50,50 @@ jobs:
             t = t.replace(/<https?:\/\/[^>]+>/g, '');
             t = t.replace(/<[^>]+>/g, '');
 
-            // Fix spaces INSIDE opening quotes: " word → "word  OR  " word → "word
-            t = t.replace(/\"\s+/g, '"');
-            t = t.replace(/"\s+([a-zA-Z0-9])/g, (m, p1) => '"' + p1);
-
-            // Fix spaces INSIDE closing quotes: word " → word"  OR  word " → word"
-            t = t.replace(/\s+\"/g, '"');
-            t = t.replace(/([a-zA-Z0-9,.])\s+"/g, (m, p1) => p1 + '"');
-
-            // Fix missing space BEFORE opening quote: word" → word "  (but not after punctuation)
-            t = t.replace(/([a-zA-Z0-9])"([a-zA-Z])/g, '$1 "$2');
-
-            // Fix missing space AFTER closing quote: "word"next → "word" next
-            t = t.replace(/"([a-zA-Z0-9].*?)"([a-zA-Z])/g, '"$1" $2');
-
-            // Fix backslash-escaped quotes first: \" → "
+            // Fix backslash-escaped quotes: \" → "
             t = t.replace(/\\"/g, '"');
 
-            // Fix mismatched quotes — all variations:
-            // "word'  →  "word"
-            t = t.replace(/"([^"\n]{1,80})'/g, '"$1"');
-            // 'word"  →  "word"
-            t = t.replace(/'([^"\n]{1,80})"/g, '"$1"');
-            // "word\'  (escaped single) → "word"
-            t = t.replace(/"([^"\n]{1,80})\\'/g, '"$1"');
-            // Standalone mismatched close: word' at end of sentence where context is a quote
-            t = t.replace(/(\w)'(\s*[,\.!\?\s])/g, '$1"$2');
+            // Fix spaces INSIDE opening quotes: " word → "word
+            t = t.replace(/"\s+([\w])/g, (m, p1) => '"' + p1);
 
-            // Fix run-on sentences missing space after period before capital
-            t = t.replace(/\.([A-Z])/g, '. $1');
+            // Fix spaces INSIDE closing quotes: word " → word"
+            t = t.replace(/([\w,.])\s+"/g, (m, p1) => p1 + '"');
 
-            // Fix missing space after comma before letter
+            // Fix missing space BEFORE opening quote: word"Word → word "Word
+            // Only when quote is followed by uppercase (start of quoted speech)
+            t = t.replace(/([a-zA-Z0-9])"([A-Z])/g, '$1 "$2');
+
+            // Fix missing space AFTER closing quote before a letter: "word"next → "word" next
+            t = t.replace(/"([^"\n]+)"([a-zA-Z])/g, '"$1" $2');
+
+            // Fix mismatched quotes: "word' → "word"  and  'word" → "word"
+            // Only match short spans (up to 120 chars) to avoid over-matching
+            t = t.replace(/"([^"'\n]{1,120})'/g, '"$1"');
+            t = t.replace(/'([^"'\n]{1,120})"/g, '"$1"');
+
+            // Fix run-on: period directly against capital letter (but not decimals like 1.5)
+            t = t.replace(/([a-z])\.([A-Z])/g, '$1. $2');
+
+            // Fix missing space after comma before letter (but not in numbers like 1,000)
             t = t.replace(/,([a-zA-Z])/g, ', $1');
+
+            // Normalize 3+ newlines to 2
+            t = t.replace(/\n{3,}/g, '\n\n');
 
             // Normalize multiple spaces
             t = t.replace(/  +/g, ' ');
 
-            // Clean up paragraph spacing
-            t = t.replace(/\n{3,}/g, '\n\n');
-
             return t.trim();
           }
 
-          function toHTML(text) {
-            if (!text) return '';
-            return text.split(/\n\n+/).map(p => '<p>' + p.trim() + '</p>').filter(p => p !== '<p></p>').join('');
+          // Split into paragraphs, clean each, rejoin — preserves structure through AI call
+          function getParagraphs(text) {
+            return text.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
+          }
+
+          function toHTML(paragraphs) {
+            if (!paragraphs || !paragraphs.length) return '';
+            return paragraphs.map(p => '<p>' + p + '</p>').join('');
           }
 
           function api(system, user) {
@@ -152,18 +150,31 @@ jobs:
                 const preTitle   = regexClean(post.title);
                 const preContent = regexClean(post.clean_content || post.content || '');
 
-                // Step 2: AI polish pass on already regex-cleaned text
-                const titleSystem   = 'You are a copy editor. The text has already been regex-cleaned. Fix any remaining typos, capitalisation errors, or awkward phrasing in this title. Return ONLY the corrected title.';
-                const contentSystem = 'You are a copy editor. The text has already been regex-cleaned for quote spacing. Fix any remaining typos, run-on words, or broken punctuation. Preserve the author voice exactly — do not rewrite or shorten. Separate paragraphs with a blank line. Return ONLY the cleaned text.';
+                // Step 2: AI polish — clean each paragraph individually to preserve breaks
+                const titleSystem = 'You are a copy editor. Fix any remaining typos, capitalisation or punctuation in this title. Return ONLY the corrected title, nothing else.';
+                const paraSystem  = 'You are a copy editor. Fix any remaining typos, quote spacing errors, or broken punctuation in this single paragraph. Preserve the author voice exactly. Return ONLY the corrected paragraph text — no commentary, no extra lines.';
 
                 const t = await api(titleSystem, preTitle);
                 await sleep(DELAY);
-                const c = await api(contentSystem, preContent);
-                await sleep(DELAY);
+
+                // Clean paragraphs individually — guarantees structure is preserved
+                const paragraphs = getParagraphs(preContent);
+                const cleanedParas = [];
+                for (let j = 0; j < paragraphs.length; j++) {
+                  const para = paragraphs[j];
+                  // Only send to AI if paragraph is long enough to need it
+                  if (para.length > 40) {
+                    const cleaned = await api(paraSystem, para);
+                    cleanedParas.push(cleaned || para);
+                    if (j < paragraphs.length - 1) await sleep(300);
+                  } else {
+                    cleanedParas.push(para);
+                  }
+                }
 
                 const update = {
                   title: t || preTitle,
-                  clean_content: c ? toHTML(c) : toHTML(preContent),
+                  clean_content: toHTML(cleanedParas.length ? cleanedParas : getParagraphs(preContent)),
                   source: SOURCE_NAME,
                   ai_cleaned: true
                 };
@@ -175,9 +186,9 @@ jobs:
               } catch(e) {
                 console.log('Error: ' + e.message);
                 // Even on API error, apply regex clean
-                const preTitle   = regexClean(post.title);
-                const preContent = regexClean(post.clean_content || post.content || '');
-                cleaned[i] = Object.assign({}, post, { title: preTitle, clean_content: toHTML(preContent), source: SOURCE_NAME });
+                const preTitle2   = regexClean(post.title);
+                const preContent2 = regexClean(post.clean_content || post.content || '');
+                cleaned[i] = Object.assign({}, post, { title: preTitle2, clean_content: toHTML(getParagraphs(preContent2)), source: SOURCE_NAME });
                 err++;
                 await sleep(2000);
               }
