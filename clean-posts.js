@@ -38,7 +38,6 @@ system: system,
 messages: [{ role: ‘user’, content: user }]
 });
 
-```
 var options = {
   hostname: 'api.anthropic.com',
   path: '/v1/messages',
@@ -72,7 +71,6 @@ var req = https.request(options, function(res) {
 req.on('error', reject);
 req.write(body);
 req.end();
-```
 
 });
 }
@@ -121,7 +119,6 @@ for (var i = 0; i < posts.length; i++) {
 var post = posts[i];
 var key = post.post_name || String(i);
 
-```
 if (progress[key]) {
   cleaned[i] = Object.assign({}, post, progress[key]);
   process.stdout.write('\r[' + (i + 1) + '/' + total + '] skipped: ' + post.title.slice(0, 50) + '          ');
@@ -152,7 +149,6 @@ try {
   errorCount++;
   await sleep(2000);
 }
-```
 
 }
 
