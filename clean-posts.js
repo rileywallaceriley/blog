@@ -19,7 +19,7 @@ const fs   = require(‘fs’);
 const path = require(‘path’);
 
 // ── CONFIG ────────────────────────────────────────────────────
-const API_KEY       = process.env.ANTHROPIC_API_KEY || ‘PASTE_YOUR_KEY_HERE’;
+const API_KEY       = process.env.ANTHROPIC_API_KEY || ‘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’;
 const INPUT_FILE    = ‘posts_complete.json’;
 const OUTPUT_FILE   = ‘posts_cleaned.json’;
 const PROGRESS_FILE = ‘clean_progress.json’; // resume support
