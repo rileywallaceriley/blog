@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       source_name:
-        description: 'Source name (e.g. HipHopDX, AAHIPHOP, Exclaim, XXL)'
+        description: 'Source name e.g. HipHopDX, AAHIPHOP, Exclaim, XXL'
         required: true
         default: 'HipHopDX'
       input_file:
-        description: 'Input JSON filename in repo root'
+        description: 'Input JSON filename'
         required: true
         default: 'posts_complete.json'
       output_file:
@@ -21,169 +21,127 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Write script
+      - name: Write cleaner script
         run: |
-          cat > cleaner.mjs << 'EOF'
-          import fs from 'fs';
-          import https from 'https';
+          node -e "
+          const fs = require('fs');
+          const script = \`
+import fs from 'fs';
+import https from 'https';
 
-          const API_KEY     = process.env.ANTHROPIC_API_KEY || '';
-          const SOURCE_NAME = process.env.SOURCE_NAME || '';
-          const INPUT       = process.env.INPUT_FILE || 'posts_complete.json';
-          const OUTPUT      = process.env.OUTPUT_FILE || 'posts_cleaned.json';
-          const PROGRESS    = 'clean_progress.json';
-          const DELAY       = 800;
+const API_KEY     = process.env.ANTHROPIC_API_KEY || '';
+const SOURCE_NAME = process.env.SOURCE_NAME || '';
+const INPUT       = process.env.INPUT_FILE || 'posts_complete.json';
+const OUTPUT      = process.env.OUTPUT_FILE || 'posts_cleaned.json';
+const PROGRESS    = 'clean_progress.json';
+const DELAY       = 800;
 
-          const sleep = ms => new Promise(r => setTimeout(r, ms));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-          // Regex for TITLE only — short and safe
-          function cleanTitle(title) {
-            if (!title) return '';
-            let t = title;
-            t = t.replace(/\\"/g, '"');
-            t = t.replace(/"([^"'\n]{1,120})'/g, '"$1"');
-            t = t.replace(/'([^"'\n]{1,120})"/g, '"$1"');
-            t = t.replace(/"\s+/g, '"');
-            t = t.replace(/\s+"/g, '"');
-            t = t.replace(/  +/g, ' ');
-            return t.trim();
-          }
+function fixTitle(t) {
+  if (!t) return '';
+  t = t.replace(/\\\\\\\\"/g, '\"');
+  t = t.replace(/\"([^\"\\\\n]{1,120})'/g, '\"$1\"');
+  t = t.replace(/'([^\"\\\\n]{1,120})\"/g, '\"$1\"');
+  t = t.replace(/\"\\\\s+/g, '\"');
+  t = t.replace(/\\\\s+\"/g, '\"');
+  return t.trim();
+}
 
-          // Strip only HTML/URLs from body — leave everything else for Claude
-          function stripHTML(text) {
-            if (!text) return '';
-            return text
-              .replace(/<https?:\/\/[^>]+>/g, '')
-              .replace(/https?:\/\/\S+/g, '')
-              .replace(/<[^>]+>/g, '')
-              .replace(/\[content_ad_unit[^\]]*\]/g, '')
-              .replace(/  +/g, ' ')
-              .trim();
-          }
+function stripHTML(t) {
+  if (!t) return '';
+  t = t.replace(/<https?:\\/\\/[^>]+>/g, '');
+  t = t.replace(/https?:\\/\\/\\\\S+/g, '');
+  t = t.replace(/<[^>]+>/g, '');
+  t = t.replace(/\\\\[content_ad_unit[^\\\\]]*\\\\]/g, '');
+  t = t.replace(/ {2,}/g, ' ');
+  return t.trim();
+}
 
-          function toHTML(text) {
-            if (!text) return '';
-            return text
-              .split(/\n\n+/)
-              .map(p => p.replace(/\n/g, ' ').trim())
-              .filter(Boolean)
-              .map(p => '<p>' + p + '</p>')
-              .join('');
-          }
+function toHTML(text) {
+  if (!text) return '';
+  return text
+    .split(/\\\\n\\\\n+/)
+    .map(p => p.replace(/\\\\n/g, ' ').trim())
+    .filter(Boolean)
+    .map(p => '<p>' + p + '</p>')
+    .join('');
+}
 
-          function api(system, user) {
-            return new Promise((resolve, reject) => {
-              const body = JSON.stringify({
-                model: 'claude-haiku-4-5-20251001',
-                max_tokens: 4096,
-                system,
-                messages: [{ role: 'user', content: user }]
-              });
-              const req = https.request({
-                hostname: 'api.anthropic.com',
-                path: '/v1/messages',
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'x-api-key': API_KEY,
-                  'anthropic-version': '2023-06-01',
-                  'Content-Length': Buffer.byteLength(body)
-                }
-              }, res => {
-                let d = '';
-                res.on('data', c => d += c);
-                res.on('end', () => {
-                  if (res.statusCode !== 200) { reject(new Error('API ' + res.statusCode + ': ' + d)); return; }
-                  const p = JSON.parse(d);
-                  resolve(p.content && p.content[0] && p.content[0].text ? p.content[0].text.trim() : null);
-                });
-              });
-              req.on('error', reject);
-              req.write(body);
-              req.end();
-            });
-          }
+function callAPI(system, user) {
+  return new Promise((resolve, reject) => {
+    const body = JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 4096, system, messages: [{ role: 'user', content: user }] });
+    const req = https.request({ hostname: 'api.anthropic.com', path: '/v1/messages', method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': API_KEY, 'anthropic-version': '2023-06-01', 'Content-Length': Buffer.byteLength(body) } }, res => {
+      let d = '';
+      res.on('data', c => d += c);
+      res.on('end', () => {
+        try {
+          if (res.statusCode !== 200) { reject(new Error('HTTP ' + res.statusCode + ' ' + d)); return; }
+          const j = JSON.parse(d);
+          resolve(j.content && j.content[0] ? j.content[0].text.trim() : null);
+        } catch(e) { reject(e); }
+      });
+    });
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
+}
 
-          async function main() {
-            console.log('Cleaner starting...');
-            console.log('Source: ' + SOURCE_NAME);
-            console.log('Input:  ' + INPUT);
-            console.log('Output: ' + OUTPUT);
+const TITLE_PROMPT = 'Fix typos and mismatched quotes in this article title. A mismatched quote means an opening double quote closed with a single quote - fix to double quotes. Return ONLY the corrected title.';
 
-            if (!API_KEY) { console.error('No API key'); process.exit(1); }
-            if (!fs.existsSync(INPUT)) { console.error('Input file not found: ' + INPUT); process.exit(1); }
+const BODY_PROMPT = 'You are editing a music journalism article. Do exactly three things: ONE - add paragraph breaks. Group the text into paragraphs of 3 to 5 sentences each, separated by a blank line. Every paragraph must be separated by a blank line. TWO - fix quote spacing. There should be no space directly inside a quotation mark. Wrong: \" word\" or \"word \". Right: \"word\". THREE - fix typos and broken punctuation. Do not rewrite anything. Return only the corrected article text with blank lines between paragraphs.';
 
-            const posts = JSON.parse(fs.readFileSync(INPUT, 'utf8'));
-            const total = posts.length;
-            console.log('Posts: ' + total);
+async function main() {
+  if (!API_KEY) { console.error('No API key'); process.exit(1); }
+  if (!fs.existsSync(INPUT)) { console.error('No input file: ' + INPUT); process.exit(1); }
+  const posts = JSON.parse(fs.readFileSync(INPUT, 'utf8'));
+  const total = posts.length;
+  console.log('Loaded ' + total + ' posts from ' + INPUT);
+  let progress = fs.existsSync(PROGRESS) ? JSON.parse(fs.readFileSync(PROGRESS, 'utf8')) : {};
+  const result = posts.slice();
+  let ok = 0, err = 0;
+  for (let i = 0; i < posts.length; i++) {
+    const post = posts[i];
+    const key = post.post_name || String(i);
+    if (progress[key]) {
+      result[i] = Object.assign({}, post, progress[key], { source: SOURCE_NAME });
+      continue;
+    }
+    console.log('[' + (i+1) + '/' + total + '] ' + post.title.slice(0, 60));
+    try {
+      const rawTitle = fixTitle(post.title);
+      const cleanedTitle = await callAPI(TITLE_PROMPT, rawTitle);
+      await sleep(DELAY);
+      const rawBody = stripHTML(post.clean_content || post.content || '');
+      const cleanedBody = await callAPI(BODY_PROMPT, rawBody);
+      await sleep(DELAY);
+      const update = { title: cleanedTitle || rawTitle, clean_content: cleanedBody ? toHTML(cleanedBody) : '<p>' + rawBody + '</p>', source: SOURCE_NAME, ai_cleaned: true };
+      result[i] = Object.assign({}, post, update);
+      progress[key] = update;
+      fs.writeFileSync(PROGRESS, JSON.stringify(progress, null, 2));
+      ok++;
+    } catch(e) {
+      console.log('Error: ' + e.message);
+      result[i] = Object.assign({}, post, { source: SOURCE_NAME });
+      err++;
+      await sleep(2000);
+    }
+  }
+  console.log('Done: ' + ok + ' cleaned, ' + err + ' errors');
+  fs.writeFileSync(OUTPUT, JSON.stringify(result, null, 2));
+  if (err === 0 && fs.existsSync(PROGRESS)) fs.unlinkSync(PROGRESS);
+}
 
-            let progress = fs.existsSync(PROGRESS) ? JSON.parse(fs.readFileSync(PROGRESS, 'utf8')) : {};
-            const result = posts.slice();
-            let ok = 0, err = 0;
-
-            const TITLE_PROMPT = 'You are a copy editor. Fix typos, mismatched quotes, and capitalisation in this article title. A mismatched quote is when an opening double quote is closed with a single quote or vice versa — fix both to double quotes. Return ONLY the corrected title. Nothing else.';
-
-            const BODY_PROMPT = 'You are a copy editor working on a music journalism article. Do these three things and nothing else:
-1. PARAGRAPH BREAKS: Divide the article into proper paragraphs. Each paragraph should be a distinct idea, topic shift, or quote block — around 3 to 5 sentences. Separate paragraphs with exactly one blank line.
-2. QUOTE SPACING: Remove any space that appears directly inside a quotation mark. "word" is correct. " word" and "word " are wrong. Also ensure a space exists before an opening quote and after a closing quote when next to regular text.
-3. TYPOS: Fix any obvious typos or broken punctuation.
-Do NOT rewrite sentences. Do NOT change meaning. Do NOT add commentary. Return ONLY the formatted article text with blank lines between paragraphs.';
-
-            for (let i = 0; i < posts.length; i++) {
-              const post = posts[i];
-              const key = post.post_name || String(i);
-
-              if (progress[key]) {
-                result[i] = Object.assign({}, post, progress[key], { source: SOURCE_NAME });
-                process.stdout.write('\r[' + (i+1) + '/' + total + '] skipped: ' + post.title.slice(0, 50));
-                continue;
-              }
-
-              process.stdout.write('\r[' + (i+1) + '/' + total + '] cleaning: ' + post.title.slice(0, 50));
-
-              try {
-                // Title: regex first, then Claude
-                const rawTitle  = cleanTitle(post.title);
-                const cleanedT  = await api(TITLE_PROMPT, rawTitle);
-                await sleep(DELAY);
-
-                // Body: strip HTML only, then Claude does everything else
-                const rawBody   = stripHTML(post.clean_content || post.content || '');
-                const cleanedB  = await api(BODY_PROMPT, rawBody);
-                await sleep(DELAY);
-
-                const update = {
-                  title:         cleanedT  || rawTitle,
-                  clean_content: cleanedB  ? toHTML(cleanedB) : '<p>' + rawBody + '</p>',
-                  source:        SOURCE_NAME,
-                  ai_cleaned:    true
-                };
-
-                result[i]     = Object.assign({}, post, update);
-                progress[key] = update;
-                fs.writeFileSync(PROGRESS, JSON.stringify(progress, null, 2));
-                ok++;
-              } catch(e) {
-                console.log('\nError on "' + post.title.slice(0, 40) + '": ' + e.message);
-                result[i] = Object.assign({}, post, { source: SOURCE_NAME });
-                err++;
-                await sleep(2000);
-              }
-            }
-
-            console.log('\nDone: ' + ok + ' cleaned, ' + err + ' errors');
-            fs.writeFileSync(OUTPUT, JSON.stringify(result, null, 2));
-            console.log('Saved: ' + OUTPUT);
-            if (err === 0 && fs.existsSync(PROGRESS)) fs.unlinkSync(PROGRESS);
-          }
-
-          main().catch(e => { console.error(e.message); process.exit(1); });
-          EOF
+main().catch(e => { console.error(e.message); process.exit(1); });
+\`;
+          fs.writeFileSync('cleaner.mjs', script);
+          console.log('Script written');
+          "
 
       - name: Run cleaner
         run: node cleaner.mjs
@@ -193,7 +151,7 @@ Do NOT rewrite sentences. Do NOT change meaning. Do NOT add commentary. Return O
           INPUT_FILE: ${{ github.event.inputs.input_file }}
           OUTPUT_FILE: ${{ github.event.inputs.output_file }}
 
-      - name: Commit cleaned posts
+      - name: Commit results
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
