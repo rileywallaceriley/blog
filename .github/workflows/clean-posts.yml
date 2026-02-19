@@ -41,9 +41,56 @@ jobs:
 
           const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-          function strip(text) {
+          // ── REGEX PRE-CLEAN ──────────────────────────────────────────
+          // Fixes systematic CMS encoding artifacts before AI sees the text
+          function regexClean(text) {
             if (!text) return '';
-            return text.replace(/<https?:\/\/[^>]+>/g, '').replace(/<[^>]+>/g, '').trim();
+            let t = text;
+
+            // Strip HTML tags and broken URLs
+            t = t.replace(/<https?:\/\/[^>]+>/g, '');
+            t = t.replace(/<[^>]+>/g, '');
+
+            // Fix spaces INSIDE opening quotes: " word → "word  OR  " word → "word
+            t = t.replace(/\"\s+/g, '"');
+            t = t.replace(/"\s+([a-zA-Z0-9])/g, (m, p1) => '"' + p1);
+
+            // Fix spaces INSIDE closing quotes: word " → word"  OR  word " → word"
+            t = t.replace(/\s+\"/g, '"');
+            t = t.replace(/([a-zA-Z0-9,.])\s+"/g, (m, p1) => p1 + '"');
+
+            // Fix missing space BEFORE opening quote: word" → word "  (but not after punctuation)
+            t = t.replace(/([a-zA-Z0-9])"([a-zA-Z])/g, '$1 "$2');
+
+            // Fix missing space AFTER closing quote: "word"next → "word" next
+            t = t.replace(/"([a-zA-Z0-9].*?)"([a-zA-Z])/g, '"$1" $2');
+
+            // Fix backslash-escaped quotes first: \" → "
+            t = t.replace(/\\"/g, '"');
+
+            // Fix mismatched quotes — all variations:
+            // "word'  →  "word"
+            t = t.replace(/"([^"\n]{1,80})'/g, '"$1"');
+            // 'word"  →  "word"
+            t = t.replace(/'([^"\n]{1,80})"/g, '"$1"');
+            // "word\'  (escaped single) → "word"
+            t = t.replace(/"([^"\n]{1,80})\\'/g, '"$1"');
+            // Standalone mismatched close: word' at end of sentence where context is a quote
+            t = t.replace(/(\w)'(\s*[,\.!\?\s])/g, '$1"$2');
+
+            // Fix run-on sentences missing space after period before capital
+            t = t.replace(/\.([A-Z])/g, '. $1');
+
+            // Fix missing space after comma before letter
+            t = t.replace(/,([a-zA-Z])/g, ', $1');
+
+            // Normalize multiple spaces
+            t = t.replace(/  +/g, ' ');
+
+            // Clean up paragraph spacing
+            t = t.replace(/\n{3,}/g, '\n\n');
+
+            return t.trim();
           }
 
           function toHTML(text) {
@@ -101,14 +148,22 @@ jobs:
               console.log('[' + (i+1) + '/' + total + '] ' + post.title.slice(0, 70));
 
               try {
-                const t = await api('You are a copy editor. Fix this article title. Rules: (1) Mismatched quotes must be fixed e.g. "word' should be "word". (2) No spaces inside quote marks next to words. (3) Spaces must exist before and after quoted phrases. (4) Fix typos. Return ONLY the corrected title.', post.title);
+                // Step 1: regex pre-clean the raw title and content
+                const preTitle   = regexClean(post.title);
+                const preContent = regexClean(post.clean_content || post.content || '');
+
+                // Step 2: AI polish pass on already regex-cleaned text
+                const titleSystem   = 'You are a copy editor. The text has already been regex-cleaned. Fix any remaining typos, capitalisation errors, or awkward phrasing in this title. Return ONLY the corrected title.';
+                const contentSystem = 'You are a copy editor. The text has already been regex-cleaned for quote spacing. Fix any remaining typos, run-on words, or broken punctuation. Preserve the author voice exactly — do not rewrite or shorten. Separate paragraphs with a blank line. Return ONLY the cleaned text.';
+
+                const t = await api(titleSystem, preTitle);
                 await sleep(DELAY);
-                const c = await api('You are a copy editor. Fix this article body. Fix these specific problems: (1) Spaces inside quotes: " word" becomes "word", "word " becomes "word". (2) Missing spaces outside quotes: text"word"text becomes text "word" text. (3) Mismatched quote marks: every opening quote must match its closing quote. (4) Run-on words missing spaces. (5) Typos and broken punctuation. Never rewrite, shorten or change meaning. Preserve author voice. Separate paragraphs with blank lines. Return ONLY the cleaned text.', strip(post.clean_content || post.content || ''));
+                const c = await api(contentSystem, preContent);
                 await sleep(DELAY);
 
                 const update = {
-                  title: t || post.title,
-                  clean_content: c ? toHTML(c) : (post.clean_content || post.content || ''),
+                  title: t || preTitle,
+                  clean_content: c ? toHTML(c) : toHTML(preContent),
                   source: SOURCE_NAME,
                   ai_cleaned: true
                 };
@@ -119,7 +174,10 @@ jobs:
                 ok++;
               } catch(e) {
                 console.log('Error: ' + e.message);
-                cleaned[i] = Object.assign({}, post, { source: SOURCE_NAME });
+                // Even on API error, apply regex clean
+                const preTitle   = regexClean(post.title);
+                const preContent = regexClean(post.clean_content || post.content || '');
+                cleaned[i] = Object.assign({}, post, { title: preTitle, clean_content: toHTML(preContent), source: SOURCE_NAME });
                 err++;
                 await sleep(2000);
               }
