@@ -101,9 +101,9 @@ jobs:
               console.log('[' + (i+1) + '/' + total + '] ' + post.title.slice(0, 70));
 
               try {
-                const t = await api('Fix only typos, spacing and punctuation in this title. Return ONLY the corrected title.', post.title);
+                const t = await api('You are a copy editor. Fix this article title. Rules: (1) Mismatched quotes must be fixed e.g. "word' should be "word". (2) No spaces inside quote marks next to words. (3) Spaces must exist before and after quoted phrases. (4) Fix typos. Return ONLY the corrected title.', post.title);
                 await sleep(DELAY);
-                const c = await api('Fix typos, spacing, run-on words and broken punctuation. Preserve author voice exactly. Paragraphs separated by blank lines. Return ONLY cleaned text.', strip(post.clean_content || post.content || ''));
+                const c = await api('You are a copy editor. Fix this article body. Fix these specific problems: (1) Spaces inside quotes: " word" becomes "word", "word " becomes "word". (2) Missing spaces outside quotes: text"word"text becomes text "word" text. (3) Mismatched quote marks: every opening quote must match its closing quote. (4) Run-on words missing spaces. (5) Typos and broken punctuation. Never rewrite, shorten or change meaning. Preserve author voice. Separate paragraphs with blank lines. Return ONLY the cleaned text.', strip(post.clean_content || post.content || ''));
                 await sleep(DELAY);
 
                 const update = {
