@@ -150,31 +150,23 @@ jobs:
                 const preTitle   = regexClean(post.title);
                 const preContent = regexClean(post.clean_content || post.content || '');
 
-                // Step 2: AI polish — clean each paragraph individually to preserve breaks
+                // Step 2: AI — title fix + full article reformat in one call
                 const titleSystem = 'You are a copy editor. Fix any remaining typos, capitalisation or punctuation in this title. Return ONLY the corrected title, nothing else.';
-                const paraSystem  = 'You are a copy editor. Fix any remaining typos, quote spacing errors, or broken punctuation in this single paragraph. Preserve the author voice exactly. Return ONLY the corrected paragraph text — no commentary, no extra lines.';
+                const bodySystem  = 'You are a copy editor working on a music journalism article. Your job: (1) Add proper paragraph breaks. Each new topic, quote block, or idea should be its own paragraph. Aim for 3-6 sentences per paragraph. (2) Fix any remaining quote spacing — no spaces inside quote marks. (3) Fix any remaining typos or broken punctuation. (4) Preserve the author voice exactly — do not rewrite or change meaning. CRITICAL: You MUST separate every paragraph with exactly one blank line. Return ONLY the cleaned article. No commentary. No headers.';
 
                 const t = await api(titleSystem, preTitle);
                 await sleep(DELAY);
+                const c = await api(bodySystem, preContent);
+                await sleep(DELAY);
 
-                // Clean paragraphs individually — guarantees structure is preserved
-                const paragraphs = getParagraphs(preContent);
-                const cleanedParas = [];
-                for (let j = 0; j < paragraphs.length; j++) {
-                  const para = paragraphs[j];
-                  // Only send to AI if paragraph is long enough to need it
-                  if (para.length > 40) {
-                    const cleaned = await api(paraSystem, para);
-                    cleanedParas.push(cleaned || para);
-                    if (j < paragraphs.length - 1) await sleep(300);
-                  } else {
-                    cleanedParas.push(para);
-                  }
-                }
+                // Parse Claude output — split on blank lines
+                const paras = c
+                  ? c.split(/\n\n+/).map(p => p.replace(/\n/g, ' ').trim()).filter(Boolean)
+                  : preContent.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
 
                 const update = {
                   title: t || preTitle,
-                  clean_content: toHTML(cleanedParas.length ? cleanedParas : getParagraphs(preContent)),
+                  clean_content: toHTML(paras),
                   source: SOURCE_NAME,
                   ai_cleaned: true
                 };
