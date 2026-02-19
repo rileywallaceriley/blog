@@ -2,6 +2,19 @@ name: Clean Posts
 
 on:
   workflow_dispatch:
+    inputs:
+      source_name:
+        description: 'Source name (e.g. HipHopDX, AAHIPHOP, Exclaim, XXL)'
+        required: true
+        default: 'HipHopDX'
+      input_file:
+        description: 'Input JSON filename in repo root'
+        required: true
+        default: 'posts_complete.json'
+      output_file:
+        description: 'Output JSON filename'
+        required: true
+        default: 'posts_cleaned.json'
 
 jobs:
   clean:
@@ -19,11 +32,12 @@ jobs:
           import fs from 'fs';
           import https from 'https';
 
-          const API_KEY = process.env.ANTHROPIC_API_KEY || '';
-          const INPUT = 'posts_complete.json';
-          const OUTPUT = 'posts_cleaned.json';
-          const PROGRESS = 'clean_progress.json';
-          const DELAY = 600;
+          const API_KEY     = process.env.ANTHROPIC_API_KEY || '';
+          const SOURCE_NAME = process.env.SOURCE_NAME || '';
+          const INPUT       = process.env.INPUT_FILE || 'posts_complete.json';
+          const OUTPUT      = process.env.OUTPUT_FILE || 'posts_cleaned.json';
+          const PROGRESS    = 'clean_progress.json';
+          const DELAY       = 600;
 
           const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -40,11 +54,14 @@ jobs:
           function api(system, user) {
             return new Promise((resolve, reject) => {
               const body = JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 4096, system, messages: [{ role: 'user', content: user }] });
-              const req = https.request({ hostname: 'api.anthropic.com', path: '/v1/messages', method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': API_KEY, 'anthropic-version': '2023-06-01', 'Content-Length': Buffer.byteLength(body) } }, res => {
+              const req = https.request({
+                hostname: 'api.anthropic.com', path: '/v1/messages', method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-api-key': API_KEY, 'anthropic-version': '2023-06-01', 'Content-Length': Buffer.byteLength(body) }
+              }, res => {
                 let d = '';
                 res.on('data', c => d += c);
                 res.on('end', () => {
-                  if (res.statusCode !== 200) { reject(new Error('API ' + res.statusCode + ' ' + d)); return; }
+                  if (res.statusCode !== 200) { reject(new Error('API ' + res.statusCode + ': ' + d)); return; }
                   const p = JSON.parse(d);
                   resolve(p.content && p.content[0] && p.content[0].text ? p.content[0].text.trim() : null);
                 });
@@ -56,9 +73,13 @@ jobs:
           }
 
           async function main() {
-            console.log('Starting cleaner...');
+            console.log('Cleaner starting...');
+            console.log('Source: ' + SOURCE_NAME);
+            console.log('Input:  ' + INPUT);
+            console.log('Output: ' + OUTPUT);
+
             if (!API_KEY) { console.error('No API key'); process.exit(1); }
-            if (!fs.existsSync(INPUT)) { console.error('No input file'); process.exit(1); }
+            if (!fs.existsSync(INPUT)) { console.error('Input file not found: ' + INPUT); process.exit(1); }
 
             const posts = JSON.parse(fs.readFileSync(INPUT, 'utf8'));
             const total = posts.length;
@@ -71,29 +92,42 @@ jobs:
             for (let i = 0; i < posts.length; i++) {
               const post = posts[i];
               const key = post.post_name || String(i);
-              if (progress[key]) { cleaned[i] = Object.assign({}, post, progress[key]); continue; }
 
-              console.log('[' + (i+1) + '/' + total + '] ' + post.title.slice(0, 60));
+              if (progress[key]) {
+                cleaned[i] = Object.assign({}, post, progress[key], { source: SOURCE_NAME });
+                continue;
+              }
+
+              console.log('[' + (i+1) + '/' + total + '] ' + post.title.slice(0, 70));
+
               try {
                 const t = await api('Fix only typos, spacing and punctuation in this title. Return ONLY the corrected title.', post.title);
                 await sleep(DELAY);
-                const c = await api('Fix typos, spacing, run-on words and broken punctuation. Preserve voice. Paragraphs separated by blank lines. Return ONLY cleaned text.', strip(post.clean_content || post.content || ''));
+                const c = await api('Fix typos, spacing, run-on words and broken punctuation. Preserve author voice exactly. Paragraphs separated by blank lines. Return ONLY cleaned text.', strip(post.clean_content || post.content || ''));
                 await sleep(DELAY);
-                const update = { title: t || post.title, clean_content: c ? toHTML(c) : (post.clean_content || post.content || ''), ai_cleaned: true };
+
+                const update = {
+                  title: t || post.title,
+                  clean_content: c ? toHTML(c) : (post.clean_content || post.content || ''),
+                  source: SOURCE_NAME,
+                  ai_cleaned: true
+                };
+
                 cleaned[i] = Object.assign({}, post, update);
                 progress[key] = update;
                 fs.writeFileSync(PROGRESS, JSON.stringify(progress, null, 2));
                 ok++;
               } catch(e) {
                 console.log('Error: ' + e.message);
-                cleaned[i] = post;
+                cleaned[i] = Object.assign({}, post, { source: SOURCE_NAME });
                 err++;
                 await sleep(2000);
               }
             }
 
             fs.writeFileSync(OUTPUT, JSON.stringify(cleaned, null, 2));
-            console.log('Done: ' + ok + ' cleaned, ' + err + ' errors. Saved ' + OUTPUT);
+            console.log('Done: ' + ok + ' cleaned, ' + err + ' errors');
+            console.log('Saved: ' + OUTPUT);
             if (err === 0 && fs.existsSync(PROGRESS)) fs.unlinkSync(PROGRESS);
           }
 
@@ -104,11 +138,14 @@ jobs:
         run: node cleaner.mjs
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SOURCE_NAME: ${{ github.event.inputs.source_name }}
+          INPUT_FILE: ${{ github.event.inputs.input_file }}
+          OUTPUT_FILE: ${{ github.event.inputs.output_file }}
 
       - name: Commit cleaned posts
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git add posts_cleaned.json
-          git commit -m "Auto-cleaned posts" || echo "Nothing to commit"
+          git add ${{ github.event.inputs.output_file }}
+          git commit -m "Cleaned ${{ github.event.inputs.source_name }} posts" || echo "Nothing to commit"
           git push
