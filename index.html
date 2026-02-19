@@ -1,1 +1,576 @@
+<!DOCTYPE html>
 
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Riley Wallace — Writing Archive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+  /* ── CONFIG ─────────────────────────────── */
+  :root {
+    --bg:       #0a0a0a;
+    --surface:  #111111;
+    --border:   #1f1f1f;
+    --accent:   #e8ff3b;
+    --muted:    #555;
+    --text:     #e8e2d9;
+    --subtext:  #888;
+    --serif:    'DM Serif Display', Georgia, serif;
+    --sans:     'DM Sans', sans-serif;
+    --display:  'Bebas Neue', sans-serif;
+    --max-w:    760px;
+    --col-gap:  2rem;
+  }
+
+/* ── RESET ──────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+background: var(–bg);
+color: var(–text);
+font-family: var(–sans);
+font-size: 17px;
+line-height: 1.7;
+min-height: 100vh;
+}
+img { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+
+/* ── NAV ────────────────────────────────── */
+nav {
+position: sticky; top: 0; z-index: 100;
+background: rgba(10,10,10,.92);
+backdrop-filter: blur(12px);
+border-bottom: 1px solid var(–border);
+display: flex; align-items: center; justify-content: space-between;
+padding: .9rem 2rem;
+}
+.nav-logo {
+font-family: var(–display);
+font-size: 1.4rem;
+letter-spacing: .04em;
+color: var(–accent);
+cursor: pointer;
+}
+.nav-right {
+display: flex; gap: 1.2rem; align-items: center;
+}
+.search-wrap {
+position: relative;
+}
+.search-wrap input {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 4px;
+color: var(–text);
+font-family: var(–sans);
+font-size: .85rem;
+padding: .45rem .9rem .45rem 2.2rem;
+width: 220px;
+outline: none;
+transition: border-color .2s;
+}
+.search-wrap input:focus { border-color: var(–accent); }
+.search-wrap::before {
+content: “⌕”;
+position: absolute; left: .6rem; top: 50%; transform: translateY(-50%);
+color: var(–muted); font-size: 1.1rem; pointer-events: none;
+}
+.tag-filter {
+display: flex; gap: .5rem; flex-wrap: wrap;
+}
+.tag-pill {
+background: transparent;
+border: 1px solid var(–border);
+border-radius: 2px;
+color: var(–subtext);
+cursor: pointer;
+font-family: var(–sans);
+font-size: .75rem;
+font-weight: 500;
+letter-spacing: .06em;
+padding: .3rem .7rem;
+text-transform: uppercase;
+transition: all .15s;
+}
+.tag-pill:hover, .tag-pill.active {
+background: var(–accent);
+border-color: var(–accent);
+color: #000;
+}
+
+/* ── HERO / INDEX ───────────────────────── */
+#view-index { animation: fadeUp .4s ease both; }
+#view-post  { animation: fadeUp .3s ease both; }
+
+@keyframes fadeUp {
+from { opacity: 0; transform: translateY(18px); }
+to   { opacity: 1; transform: translateY(0); }
+}
+
+.masthead {
+padding: 4rem 2rem 2rem;
+border-bottom: 1px solid var(–border);
+max-width: 1200px; margin: 0 auto;
+}
+.masthead-eyebrow {
+font-family: var(–sans);
+font-size: .7rem;
+font-weight: 500;
+letter-spacing: .18em;
+text-transform: uppercase;
+color: var(–accent);
+margin-bottom: .6rem;
+}
+.masthead h1 {
+font-family: var(–display);
+font-size: clamp(3rem, 8vw, 7rem);
+line-height: .95;
+letter-spacing: .02em;
+color: var(–text);
+}
+
+/* ── GRID ───────────────────────────────── */
+.grid-wrapper {
+max-width: 1200px;
+margin: 0 auto;
+padding: 2.5rem 2rem 4rem;
+}
+.post-grid {
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+gap: 1.5px;
+background: var(–border);
+border: 1px solid var(–border);
+}
+.post-card {
+background: var(–bg);
+cursor: pointer;
+padding: 2rem;
+transition: background .15s;
+position: relative;
+overflow: hidden;
+}
+.post-card::after {
+content: ‘’;
+position: absolute; left: 0; bottom: 0;
+width: 0; height: 2px;
+background: var(–accent);
+transition: width .25s ease;
+}
+.post-card:hover { background: var(–surface); }
+.post-card:hover::after { width: 100%; }
+
+.card-date {
+font-size: .72rem;
+letter-spacing: .1em;
+text-transform: uppercase;
+color: var(–muted);
+margin-bottom: .6rem;
+}
+.card-title {
+font-family: var(–serif);
+font-size: 1.25rem;
+line-height: 1.3;
+color: var(–text);
+margin-bottom: .9rem;
+}
+.card-excerpt {
+font-size: .85rem;
+color: var(–subtext);
+line-height: 1.6;
+display: -webkit-box;
+-webkit-line-clamp: 3;
+-webkit-box-orient: vertical;
+overflow: hidden;
+}
+.card-arrow {
+margin-top: 1.2rem;
+font-size: .75rem;
+letter-spacing: .12em;
+text-transform: uppercase;
+color: var(–accent);
+font-weight: 500;
+}
+
+/* ── POST VIEW ──────────────────────────── */
+.post-view {
+max-width: var(–max-w);
+margin: 0 auto;
+padding: 3rem 2rem 6rem;
+}
+.back-btn {
+display: inline-flex; align-items: center; gap: .4rem;
+font-size: .75rem;
+font-weight: 500;
+letter-spacing: .1em;
+text-transform: uppercase;
+color: var(–muted);
+cursor: pointer;
+margin-bottom: 3rem;
+transition: color .15s;
+}
+.back-btn:hover { color: var(–accent); }
+
+.post-meta-top {
+font-size: .72rem;
+letter-spacing: .12em;
+text-transform: uppercase;
+color: var(–accent);
+margin-bottom: 1rem;
+}
+.post-title {
+font-family: var(–serif);
+font-size: clamp(1.8rem, 4vw, 3rem);
+line-height: 1.15;
+color: var(–text);
+margin-bottom: 2rem;
+}
+.post-divider {
+width: 40px; height: 2px;
+background: var(–accent);
+margin-bottom: 2.5rem;
+}
+.post-body {
+font-size: 1.05rem;
+line-height: 1.85;
+color: #c8c4bc;
+}
+.post-body p {
+margin-bottom: 1.5rem;
+}
+.post-body p:first-child::first-letter {
+font-family: var(–display);
+font-size: 4.5rem;
+line-height: .8;
+float: left;
+margin: .05em .12em 0 0;
+color: var(–accent);
+}
+
+/* ── STATE ──────────────────────────────── */
+.state-msg {
+text-align: center;
+padding: 6rem 2rem;
+color: var(–muted);
+font-size: 1rem;
+}
+.state-msg span {
+display: block;
+font-family: var(–display);
+font-size: 3rem;
+color: var(–border);
+margin-bottom: 1rem;
+}
+
+/* ── LOADING BAR ────────────────────────── */
+#loading-bar {
+position: fixed; top: 0; left: 0;
+height: 2px; background: var(–accent);
+width: 0%; transition: width .4s ease;
+z-index: 9999;
+}
+
+/* ── SCROLL TO TOP ──────────────────────── */
+#scroll-top {
+position: fixed; bottom: 2rem; right: 2rem;
+background: var(–accent); color: #000;
+border: none; cursor: pointer;
+width: 40px; height: 40px;
+font-size: 1.2rem;
+display: none; align-items: center; justify-content: center;
+transition: opacity .2s;
+}
+#scroll-top.visible { display: flex; }
+
+/* ── CONFIG MODAL ───────────────────────── */
+.modal-bg {
+position: fixed; inset: 0;
+background: rgba(0,0,0,.85);
+display: flex; align-items: center; justify-content: center;
+z-index: 200;
+}
+.modal {
+background: var(–surface);
+border: 1px solid var(–border);
+padding: 2.5rem;
+max-width: 500px; width: 90%;
+}
+.modal h2 {
+font-family: var(–display);
+font-size: 1.8rem;
+margin-bottom: .5rem;
+color: var(–accent);
+}
+.modal p { font-size: .88rem; color: var(–subtext); margin-bottom: 1.5rem; }
+.modal input {
+width: 100%;
+background: var(–bg);
+border: 1px solid var(–border);
+color: var(–text);
+font-family: var(–sans);
+font-size: .9rem;
+padding: .7rem 1rem;
+margin-bottom: 1rem;
+outline: none;
+}
+.modal input:focus { border-color: var(–accent); }
+.modal-btns { display: flex; gap: .8rem; justify-content: flex-end; }
+.btn {
+background: var(–accent); color: #000;
+border: none; cursor: pointer;
+font-family: var(–sans); font-size: .85rem; font-weight: 600;
+letter-spacing: .06em; text-transform: uppercase;
+padding: .65rem 1.4rem;
+transition: opacity .15s;
+}
+.btn:hover { opacity: .85; }
+.btn-ghost {
+background: transparent;
+border: 1px solid var(–border);
+color: var(–subtext);
+}
+.btn-ghost:hover { border-color: var(–muted); color: var(–text); opacity: 1; }
+
+/* ── RESPONSIVE ─────────────────────────── */
+@media (max-width: 600px) {
+nav { padding: .8rem 1rem; }
+.search-wrap input { width: 150px; }
+.masthead { padding: 2.5rem 1rem 1.5rem; }
+.grid-wrapper { padding: 1.5rem 0 3rem; }
+.post-card { padding: 1.5rem; }
+.post-view { padding: 2rem 1.2rem 4rem; }
+}
+</style>
+
+</head>
+<body>
+
+<div id="loading-bar"></div>
+
+<!-- NAV -->
+
+<nav>
+  <div class="nav-logo" onclick="showIndex()">Riley Wallace</div>
+  <div class="nav-right">
+    <div class="search-wrap">
+      <input type="text" id="search-input" placeholder="Search posts…" oninput="filterPosts()">
+    </div>
+    <button class="btn btn-ghost" onclick="openConfig()" style="font-size:.7rem;padding:.4rem .8rem;">⚙ Source</button>
+  </div>
+</nav>
+
+<!-- MAIN -->
+
+<main id="app"></main>
+
+<!-- SCROLL TOP -->
+
+<button id="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<!-- CONFIG MODAL -->
+
+<div class="modal-bg" id="config-modal" style="display:none;">
+  <div class="modal">
+    <h2>JSON Source</h2>
+    <p>Paste the direct URL to your JSON file. For Google Drive, use the direct download link format:<br>
+    <code style="font-size:.78rem;color:var(--accent)">https://drive.google.com/uc?export=download&amp;id=FILE_ID</code></p>
+    <input type="text" id="json-url-input" placeholder="https://…" />
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeConfig()">Cancel</button>
+      <button class="btn" onclick="loadFromUrl()">Load</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────
+const DEFAULT_URL = 'https://raw.githubusercontent.com/rileywallaceriley/blog/main/posts_complete.json';
+let allPosts = [];
+let filteredPosts = [];
+let currentQuery = '';
+
+// ── SAMPLE DATA (shown before any JSON is loaded) ──────────────
+const SAMPLE = [
+  {
+    post_name: "kanye-west-albums-ranked-worst-best",
+    date: "2024-03-18 13:15:17",
+    title: "Kanye West Albums Ranked Worst to Best — Can't Tell Us Nothing",
+    clean_content: `There's no disputing that Kanye West has had one of the wilder story arcs in modern music history. Never one to hold his tongue, his timeline has seen him gradually evolve from the protagonist of an endearing underdog story to a seemingly unstable, yet admirably uncancellable villain. However, above all the personal drama the producer, rapper and fashion mogul has very publicly endured since his debut album The College Dropout dropped 20 years ago, his music has remained his constant.\n\nIn a world where antics and relevance go hand in hand, Ye has made a habit of dying on very unpopular hills, making it increasingly difficult for some to separate the art from the artist. That, of course, is a very mild way to put it. Still, his discography remains one of the most celebrated and influential in Hip Hop.\n\nMy Beautiful Dark Twisted Fantasy stands as perhaps the most fully fleshed-out, evolved example of Ye's artistic and conceptual genius. Far removed from his "Old Kanye" aesthetic, and not yet as polarizing as Yeezus, this album best showcases why Ye is widely regarded as one of the most influential artists of his time.`
+  }
+];
+
+// ── HELPERS ────────────────────────────────────────────────────
+function formatDate(str) {
+  const d = new Date(str);
+  return d.toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+}
+
+function excerpt(text, len = 160) {
+  if (!text) return '';
+  const clean = text.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  return clean.length > len ? clean.slice(0, len).replace(/\s\S+$/, '') + '…' : clean;
+}
+
+function contentToHTML(text) {
+  if (!text) return '';
+  const clean = text.replace(/<https?:\/\/[^>]+>/g, '').replace(/<[^>]+>/g, '');
+  return clean.split(/\n\n+/).map(p => `<p>${p.trim()}</p>`).join('');
+}
+
+// ── LOADING BAR ────────────────────────────────────────────────
+function setBar(pct) {
+  const b = document.getElementById('loading-bar');
+  b.style.width = pct + '%';
+  if (pct >= 100) setTimeout(() => b.style.width = '0%', 600);
+}
+
+// ── RENDER INDEX ───────────────────────────────────────────────
+function showIndex() {
+  document.getElementById('search-input').value = '';
+  currentQuery = '';
+  filteredPosts = [...allPosts];
+  renderIndex();
+}
+
+function renderIndex() {
+  const app = document.getElementById('app');
+  const posts = filteredPosts;
+
+  if (allPosts.length === 0) {
+    app.innerHTML = `
+      <div class="masthead">
+        <div class="masthead-eyebrow">Writing Archive</div>
+        <h1>WRITING ARCHIVE</h1>
+      </div>
+      <div class="state-msg">
+        <span>NO DATA</span>
+        Click <strong>⚙ Source</strong> to load your JSON file, or add the URL to <code>DEFAULT_URL</code> in the script.
+        <br><br>
+        <button class="btn" onclick="loadSample()">Load Sample Post</button>
+      </div>`;
+    return;
+  }
+
+  const cards = posts.map((p, i) => `
+    <div class="post-card" onclick="showPost(${i})" style="animation-delay:${(i % 12) * 0.04}s">
+      <div class="card-date">${formatDate(p.date)}</div>
+      <div class="card-title">${p.title}</div>
+      <div class="card-excerpt">${excerpt(p.clean_content || p.content)}</div>
+      <div class="card-arrow">Read →</div>
+    </div>`).join('');
+
+  const count = posts.length;
+  const total = allPosts.length;
+  const subtitle = currentQuery
+    ? `${count} result${count !== 1 ? 's' : ''} for "${currentQuery}"`
+    : `${total} post${total !== 1 ? 's' : ''}`;
+
+  app.innerHTML = `
+    <div id="view-index">
+      <div class="masthead">
+        <div class="masthead-eyebrow">${subtitle}</div>
+        <h1>WRITING ARCHIVE</h1>
+      </div>
+      <div class="grid-wrapper">
+        ${posts.length ? `<div class="post-grid">${cards}</div>` : `<div class="state-msg"><span>0</span>No posts match your search.</div>`}
+      </div>
+    </div>`;
+}
+
+// ── RENDER POST ────────────────────────────────────────────────
+function showPost(idx) {
+  const p = filteredPosts[idx];
+  if (!p) return;
+  window.scrollTo(0, 0);
+  const body = contentToHTML(p.clean_content || p.content);
+  document.getElementById('app').innerHTML = `
+    <div id="view-post">
+      <div class="post-view">
+        <div class="back-btn" onclick="showIndex()">← All Posts</div>
+        <div class="post-meta-top">${formatDate(p.date)}</div>
+        <h1 class="post-title">${p.title}</h1>
+        <div class="post-divider"></div>
+        <div class="post-body">${body}</div>
+      </div>
+    </div>`;
+}
+
+// ── SEARCH ─────────────────────────────────────────────────────
+function filterPosts() {
+  const q = document.getElementById('search-input').value.toLowerCase().trim();
+  currentQuery = q;
+  if (!q) {
+    filteredPosts = [...allPosts];
+  } else {
+    filteredPosts = allPosts.filter(p =>
+      p.title.toLowerCase().includes(q) ||
+      (p.clean_content || p.content || '').toLowerCase().includes(q)
+    );
+  }
+  renderIndex();
+}
+
+// ── LOAD JSON ──────────────────────────────────────────────────
+async function loadJSON(url) {
+  setBar(30);
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    setBar(90);
+    allPosts = Array.isArray(data) ? data : (data.posts || data.data || []);
+    allPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
+    filteredPosts = [...allPosts];
+    setBar(100);
+    renderIndex();
+    localStorage.setItem('dx_json_url', url);
+  } catch (e) {
+    setBar(100);
+    alert(`Could not load JSON:\n${e.message}\n\nMake sure the URL is publicly accessible and returns valid JSON.`);
+  }
+}
+
+function loadSample() {
+  allPosts = SAMPLE;
+  filteredPosts = [...SAMPLE];
+  renderIndex();
+}
+
+// ── CONFIG MODAL ───────────────────────────────────────────────
+function openConfig() {
+  const saved = localStorage.getItem('dx_json_url') || DEFAULT_URL;
+  document.getElementById('json-url-input').value = saved;
+  document.getElementById('config-modal').style.display = 'flex';
+}
+function closeConfig() {
+  document.getElementById('config-modal').style.display = 'none';
+}
+function loadFromUrl() {
+  const url = document.getElementById('json-url-input').value.trim();
+  if (!url) return;
+  closeConfig();
+  loadJSON(url);
+}
+
+// ── SCROLL TOP ─────────────────────────────────────────────────
+window.addEventListener('scroll', () => {
+  const btn = document.getElementById('scroll-top');
+  btn.classList.toggle('visible', window.scrollY > 500);
+});
+
+// ── INIT ───────────────────────────────────────────────────────
+(function init() {
+  const url = DEFAULT_URL || localStorage.getItem('dx_json_url');
+  if (url) {
+    loadJSON(url);
+  } else {
+    renderIndex();
+  }
+})();
+</script>
+
+</body>
+</html>
