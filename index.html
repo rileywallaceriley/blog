@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Riley Wallace">
 <link rel="manifest" href="/manifest.json">
-<link rel="apple-touch-icon" href="/logo.png">
+<link rel="apple-touch-icon" href="/logoava.jpg">
 <title>Riley Wallace — Writing Archive</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
@@ -299,21 +299,27 @@ function skeletonHTML() {
 
 // ── URL / SHARING ───────────────────────────────────────────────
 function getHashPost() {
+  // Support both /post/slug (new) and #post/slug (legacy)
+  const path = window.location.pathname;
+  if (path.startsWith('/post/')) return decodeURIComponent(path.slice(6));
   const h = window.location.hash;
   if (h.startsWith('#post/')) return decodeURIComponent(h.slice(6));
   return null;
 }
 
 function setHashPost(postName) {
-  history.pushState(null, '', '#post/' + encodeURIComponent(postName));
+  const url = '/post/' + encodeURIComponent(postName);
+  history.pushState({ postName }, '', url);
+  document.title = 'Riley Wallace';
 }
 
 function clearHash() {
-  history.pushState(null, '', window.location.pathname);
+  history.pushState(null, '', '/');
+  document.title = 'Riley Wallace — Writing Archive';
 }
 
 function copyShareLink(postName) {
-  const url = window.location.origin + window.location.pathname + '#post/' + encodeURIComponent(postName);
+  const url = window.location.origin + '/post/' + encodeURIComponent(postName);
   navigator.clipboard.writeText(url).then(() => {
     const btn = document.getElementById('share-btn');
     if (btn) { btn.textContent = '✓ Copied'; btn.classList.add('copied'); }
@@ -474,6 +480,7 @@ async function renderPost(p) {
   const cachedContent = contentCache.get(p.post_name);
   const sourceBadge   = p.source ? `<span class="post-source-badge">${p.source}</span>` : '';
 
+  document.title = p.title + ' — Riley Wallace';
   document.getElementById('app').innerHTML = `
     <div id="view-post">
       <div class="post-view">
@@ -634,12 +641,13 @@ function clearApiKey() {
 }
 
 // ── BACK / FORWARD ──────────────────────────────────────────────
-window.addEventListener('popstate', () => {
+window.addEventListener('popstate', (e) => {
   const linked = getHashPost();
   if (linked) {
     const post = allPosts.find(p => p.post_name === linked);
     if (post) { renderPost(post); return; }
   }
+  document.title = 'Riley Wallace — Writing Archive';
   renderIndex();
 });
 
