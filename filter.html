@@ -58,6 +58,7 @@
       <div class="stat remove"><strong id="stat-flag">0</strong><span>Total flagged</span></div>
       <div class="stat"><strong id="stat-listicle" style="color:#fa0">0</strong><span>Listicles</span></div>
       <div class="stat"><strong id="stat-tribute" style="color:#c084fc">0</strong><span>Tributes</span></div>
+      <div class="stat"><strong id="stat-qa" style="color:#38bdf8">0</strong><span>Q&amp;A / Interviews</span></div>
     </div>
 
 ```
@@ -125,6 +126,14 @@ function isListicle(post) {
   const bodyHits = TRIBUTE_BODY_PATTERNS.filter(p => p.test(body)).length;
   if (bodyHits >= 2) return { type: 'tribute', label: `Body signals (${bodyHits} matches)` };
 
+  // Q&A detection — count question marks in body
+  const questionMarks = (body.match(/\?/g) || []).length;
+  const wordCount = body.split(/\s+/).length;
+  // Flag if 4+ question marks OR density is high (1 per 80 words)
+  if (questionMarks >= 4 || (questionMarks >= 2 && wordCount / questionMarks < 80)) {
+    return { type: 'qa', label: `${questionMarks} question marks in body` };
+  }
+
   return null;
 }
 
@@ -152,21 +161,24 @@ function analyze() {
   flaggedIndices = new Set();
   const listicles = [];
   const tributes  = [];
+  const qas       = [];
 
   allPosts.forEach((post, i) => {
     const match = isListicle(post);
     if (match) {
       flaggedIndices.add(i);
       if (match.type === 'tribute') tributes.push({ i, post, reason: match.label });
+      else if (match.type === 'qa') qas.push({ i, post, reason: match.label });
       else listicles.push({ i, post, reason: match.label });
     }
   });
 
-  const total = listicles.length + tributes.length;
+  const total = listicles.length + tributes.length + qas.length;
   document.getElementById('stat-keep').textContent = allPosts.length - total;
   document.getElementById('stat-flag').textContent = total;
   document.getElementById('stat-listicle').textContent = listicles.length;
   document.getElementById('stat-tribute').textContent  = tributes.length;
+  document.getElementById('stat-qa').textContent       = qas.length;
 
   const list = document.getElementById('flagged-list');
 
@@ -189,7 +201,8 @@ function analyze() {
   } else {
     list.innerHTML =
       renderGroup('🗒 Listicles / Rankings', '#fa0', listicles) +
-      renderGroup('🕊 Tributes / Obituaries', '#c084fc', tributes);
+      renderGroup('🕊 Tributes / Obituaries', '#c084fc', tributes) +
+      renderGroup('💬 Q&A / Interviews', '#38bdf8', qas);
   }
 
   document.getElementById('results').style.display = 'block';
