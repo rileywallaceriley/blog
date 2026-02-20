@@ -65,8 +65,8 @@
 
 <div class="card">
   <label>Anthropic API Key</label>
-  <input type="password" id="api-key" placeholder="sk-ant-…" />
-  <p class="tip">Your key is never stored or sent anywhere except directly to Anthropic. Get one at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></p>
+  <input type="password" id="api-key" placeholder="sk-…" />
+  <p class="tip">Your key is never stored or sent anywhere except directly to Anthropic. Get one at <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a></p>
 </div>
 
 <div class="card">
@@ -133,19 +133,19 @@ function setProgress(current, total) {
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 async function callClaude(apiKey, system, user) {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true'
+      'Authorization': 'Bearer ' + apiKey
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: 'gpt-4o',
       max_tokens: 8000,
-      system: system,
-      messages: [{ role: 'user', content: user }]
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: user }
+      ]
     })
   });
   if (!res.ok) {
@@ -153,7 +153,7 @@ async function callClaude(apiKey, system, user) {
     throw new Error('API ' + res.status + ': ' + err);
   }
   const data = await res.json();
-  return data.content && data.content[0] ? data.content[0].text.trim() : null;
+  return data.choices && data.choices[0] ? data.choices[0].message.content.trim() : null;
 }
 
 const SYSTEM_PROMPT = `You are a professional copy editor. You will be given the raw text of a music journalism article that was scraped from a CMS and contains formatting artifacts.
@@ -215,7 +215,7 @@ async function startCleaning() {
   document.getElementById('log').innerHTML = '';
 
   log('Starting — ' + posts.length + ' posts to clean', 'info');
-  log('Model: claude-sonnet-4-20250514', 'info');
+  log('Model: gpt-4o', 'info');
 
   const limitVal = parseInt(document.getElementById('test-limit').value.trim());
   const limit = !isNaN(limitVal) && limitVal > 0 ? limitVal : posts.length;
