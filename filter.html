@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Listicle Filter</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0a0a0a; color: #e8e2d9; font-family: 'DM Sans', sans-serif; font-size: 15px; line-height: 1.6; padding: 2rem; }
+  h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; color: #e8ff3b; margin-bottom: .25rem; }
+  .sub { color: #555; font-size: .85rem; margin-bottom: 2rem; }
+  .card { background: #111; border: 1px solid #1f1f1f; padding: 1.5rem; margin-bottom: 1rem; border-radius: 2px; }
+  label { display: block; font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: #555; margin-bottom: .5rem; }
+  .drop-zone { border: 2px dashed #2a2a2a; padding: 2.5rem; text-align: center; cursor: pointer; transition: all .2s; border-radius: 2px; }
+  .drop-zone:hover, .drop-zone.over { border-color: #e8ff3b; }
+  .drop-zone p { color: #555; }
+  .btn { background: #e8ff3b; color: #000; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: .85rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: .7rem 1.6rem; border-radius: 2px; transition: opacity .15s; }
+  .btn:hover { opacity: .85; }
+  .btn-ghost { background: transparent; border: 1px solid #2a2a2a; color: #888; }
+  .btn-ghost:hover { border-color: #e8ff3b; color: #e8ff3b; opacity: 1; }
+  .stats { display: flex; gap: 2rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .stat strong { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; display: block; line-height: 1; }
+  .stat.keep strong { color: #4a9; }
+  .stat.remove strong { color: #fa0; }
+  .stat span { font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: #555; }
+  .post-list { max-height: 500px; overflow-y: auto; border: 1px solid #1a1a1a; border-radius: 2px; }
+  .post-row { display: flex; align-items: flex-start; gap: .8rem; padding: .9rem 1rem; border-bottom: 1px solid #141414; transition: background .1s; }
+  .post-row:hover { background: #0f0f0f; }
+  .post-row:last-child { border-bottom: none; }
+  .post-row input[type="checkbox"] { margin-top: 3px; flex-shrink: 0; accent-color: #e8ff3b; width: 15px; height: 15px; }
+  .post-title-text { font-size: .88rem; color: #e8e2d9; line-height: 1.4; }
+  .post-date { font-size: .7rem; color: #444; margin-top: .2rem; }
+  .match-reason { font-size: .68rem; color: #fa0; margin-top: .2rem; letter-spacing: .05em; }
+  .section-head { font-size: .7rem; letter-spacing: .15em; text-transform: uppercase; color: #555; padding: .6rem 1rem; background: #0d0d0d; border-bottom: 1px solid #141414; }
+  .btn-row { display: flex; gap: .8rem; flex-wrap: wrap; margin-top: 1rem; }
+  #results { display: none; }
+</style>
+</head>
+<body>
+
+<h1>Listicle Filter</h1>
+<p class="sub">Identifies ranking/list posts so you can remove them from the main JSON</p>
+
+<div class="card">
+  <label>Drop your JSON file</label>
+  <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+    <p id="drop-label">Drop JSON here or tap to browse</p>
+  </div>
+  <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFile(this.files[0])">
+</div>
+
+<div id="results">
+  <div class="card">
+    <div class="stats">
+      <div class="stat keep"><strong id="stat-keep">0</strong><span>Regular posts (kept)</span></div>
+      <div class="stat remove"><strong id="stat-flag">0</strong><span>Total flagged</span></div>
+      <div class="stat"><strong id="stat-listicle" style="color:#fa0">0</strong><span>Listicles</span></div>
+      <div class="stat"><strong id="stat-tribute" style="color:#c084fc">0</strong><span>Tributes</span></div>
+    </div>
+
+```
+<p style="font-size:.82rem;color:#666;margin-bottom:1rem;">Review flagged posts below. Uncheck any that <em>shouldn't</em> be removed.</p>
+
+<div class="post-list" id="flagged-list"></div>
+
+<div class="btn-row">
+  <button class="btn" onclick="downloadFiltered()">Download Clean JSON</button>
+  <button class="btn btn-ghost" onclick="downloadListicles()">Download Listicles JSON</button>
+</div>
+```
+
+  </div>
+</div>
+
+<script>
+let allPosts = [];
+let flaggedIndices = new Set();
+
+const LISTICLE_PATTERNS = [
+  { re: /\b(\d+)\s+(best|worst|greatest|top|essential|classic|underrated|overlooked|slept.on|fire|must.listen|must.hear|must.know|things|reasons|ways|songs|tracks|albums|projects|moments|bars|verses|lines|features|collabs|facts|tips)\b/i, label: 'Number + list keyword' },
+  { re: /^(top|best|worst|greatest|essential|ranking|ranked|every)\b/i, label: 'Starts with list keyword' },
+  { re: /\b(ranked|ranking|rankings)\b/i, label: 'Ranking keyword' },
+  { re: /\bour\s+picks\b|\bwe\s+rank\b|\bpick\s+the\s+best\b/i, label: 'Editorial list phrase' },
+  { re: /\ball\s+\d+\b|\bevery\s+(song|track|album|project|verse|bar)\b/i, label: 'All/every + content' },
+  { re: /\blistened\s+to\s+every\b|\bwatched\s+every\b/i, label: 'Completionist phrase' },
+  { re: /\b(definitive|ultimate|complete)\s+(list|guide|ranking|breakdown)\b/i, label: 'Definitive list' },
+  { re: /#\d+|no\.\s*\d+/i, label: 'Numbered entry' },
+];
+
+// Tribute/obituary patterns — title only
+const TRIBUTE_TITLE_PATTERNS = [
+  { re: /\b(r\.?i\.?p\.?|rest\s+in\s+peace|in\s+memoriam|tribute|remembering|celebrating\s+the\s+life)\b/i, label: 'RIP / tribute title' },
+  { re: /\b(dead|died|death|passes?\s+away|passing|loss\s+of|losing|we\s+lost|hip.?hop\s+lost)\b/i, label: 'Death keyword in title' },
+  { re: /\b(legacy|legend\s+lost|gone\s+too\s+soon|forever\s+in\s+our|miss(ing)?\s+you|goodbye)\b/i, label: 'Legacy/farewell in title' },
+  { re: /\b(years?\s+(since|after)\s+(the\s+)?(death|passing|murder|killing))/i, label: 'Anniversary of death' },
+  { re: /\b(eulogy|obituary|farewell\s+to)\b/i, label: 'Eulogy/obituary' },
+];
+
+// Tribute patterns — body text signals (need multiple hits to flag)
+const TRIBUTE_BODY_PATTERNS = [
+  /\b(passed\s+away|rest\s+in\s+peace|r\.?i\.?p\.?)\b/i,
+  /\b(his\s+legacy|her\s+legacy|their\s+legacy|will\s+be\s+remembered|left\s+behind|posthumous)\b/i,
+  /\b(tragic(ally)?|untimely|too\s+soon|mourning|griev(e|ing)|memorial)\b/i,
+  /\b(shot\s+and\s+killed|found\s+dead|death\s+of|died\s+at\s+\d+|aged\s+\d+.*died)\b/i,
+];
+
+function isListicle(post) {
+  const title = (post.title || '').trim();
+  
+  // Check listicle title patterns
+  for (const p of LISTICLE_PATTERNS) {
+    if (p.re.test(title)) return { type: 'listicle', label: p.label };
+  }
+
+  // Check tribute title patterns
+  for (const p of TRIBUTE_TITLE_PATTERNS) {
+    if (p.re.test(title)) return { type: 'tribute', label: p.label };
+  }
+
+  // Check body for tribute signals (require 2+ matches to avoid false positives)
+  const body = ((post.clean_content || post.content || '') + ' ' + (post.excerpt || ''))
+    .replace(/<[^>]+>/g, ' ');
+  const bodyHits = TRIBUTE_BODY_PATTERNS.filter(p => p.test(body)).length;
+  if (bodyHits >= 2) return { type: 'tribute', label: `Body signals (${bodyHits} matches)` };
+
+  return null;
+}
+
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('over'); handleFile(e.dataTransfer.files[0]); });
+
+function handleFile(file) {
+  if (!file) return;
+  document.getElementById('drop-label').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      allPosts = JSON.parse(e.target.result);
+      analyze();
+    } catch(err) {
+      alert('Invalid JSON: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function analyze() {
+  flaggedIndices = new Set();
+  const listicles = [];
+  const tributes  = [];
+
+  allPosts.forEach((post, i) => {
+    const match = isListicle(post);
+    if (match) {
+      flaggedIndices.add(i);
+      if (match.type === 'tribute') tributes.push({ i, post, reason: match.label });
+      else listicles.push({ i, post, reason: match.label });
+    }
+  });
+
+  const total = listicles.length + tributes.length;
+  document.getElementById('stat-keep').textContent = allPosts.length - total;
+  document.getElementById('stat-flag').textContent = total;
+  document.getElementById('stat-listicle').textContent = listicles.length;
+  document.getElementById('stat-tribute').textContent  = tributes.length;
+
+  const list = document.getElementById('flagged-list');
+
+  function renderGroup(title, color, items) {
+    if (!items.length) return '';
+    return `<div class="section-head" style="color:${color}">${title} — ${items.length} posts · uncheck to keep</div>` +
+      items.map(({ i, post, reason }) => `
+        <div class="post-row">
+          <input type="checkbox" checked id="chk-${i}" onchange="toggleFlag(${i}, this.checked)">
+          <div>
+            <div class="post-title-text">${post.title || '(no title)'}</div>
+            <div class="post-date">${(post.date||'').slice(0,10)} · ${post.source || ''}</div>
+            <div class="match-reason">Matched: ${reason}</div>
+          </div>
+        </div>`).join('');
+  }
+
+  if (total === 0) {
+    list.innerHTML = '<div class="section-head">Nothing flagged 🎉</div>';
+  } else {
+    list.innerHTML =
+      renderGroup('🗒 Listicles / Rankings', '#fa0', listicles) +
+      renderGroup('🕊 Tributes / Obituaries', '#c084fc', tributes);
+  }
+
+  document.getElementById('results').style.display = 'block';
+}
+
+function toggleFlag(i, checked) {
+  if (checked) flaggedIndices.add(i);
+  else flaggedIndices.delete(i);
+  const kept = allPosts.length - flaggedIndices.size;
+  document.getElementById('stat-keep').textContent = kept;
+  document.getElementById('stat-flag').textContent = flaggedIndices.size;
+}
+
+function downloadFiltered() {
+  const clean = allPosts.filter((_, i) => !flaggedIndices.has(i));
+  download(clean, 'posts_no_listicles.json');
+}
+
+function downloadListicles() {
+  const listicles = allPosts.filter((_, i) => flaggedIndices.has(i));
+  download(listicles, 'posts_listicles.json');
+}
+
+function download(data, filename) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+
+</body>
+</html>
