@@ -55,9 +55,18 @@ padding: .28rem .75rem; text-transform: uppercase; transition: all .15s;
 @keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 
 /* MASTHEAD */
-.masthead { padding: 3rem 2rem 2rem; border-bottom: 1px solid #1f1f1f; max-width: 1200px; margin: 0 auto; }
+.masthead { padding: 2.5rem 2rem 2rem; border-bottom: 1px solid #1f1f1f; max-width: 1200px; margin: 0 auto; text-align: center; }
 .masthead-eyebrow { font-size: .7rem; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: #e8ff3b; margin-bottom: .6rem; }
-.masthead h1 { font-family: ‘Bebas Neue’, sans-serif; font-size: clamp(3rem, 8vw, 7rem); line-height: .95; letter-spacing: .02em; color: #e8e2d9; }
+.masthead-logo { max-width: 320px; width: 80%; height: auto; display: block; margin: 0 auto 1.2rem; }
+.about-btn { background: transparent; border: 1px solid #2a2a2a; color: #666; cursor: pointer; font-family: ‘DM Sans’, sans-serif; font-size: .72rem; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; padding: .35rem .9rem; border-radius: 2px; transition: all .15s; margin-top: .6rem; }
+.about-btn:hover { border-color: #e8ff3b; color: #e8ff3b; }
+.about-modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.88); display: flex; align-items: center; justify-content: center; z-index: 300; padding: 1.5rem; }
+.about-modal { background: #111; border: 1px solid #1f1f1f; padding: 2.5rem; max-width: 560px; width: 100%; position: relative; }
+.about-modal h2 { font-family: ‘Bebas Neue’, sans-serif; font-size: 1.8rem; color: #e8ff3b; margin-bottom: 1.2rem; letter-spacing: .04em; }
+.about-modal p { font-size: .92rem; color: #aaa; line-height: 1.75; margin-bottom: 1rem; }
+.about-modal p:last-of-type { margin-bottom: 0; }
+.about-close { position: absolute; top: 1rem; right: 1rem; background: transparent; border: none; color: #555; font-size: 1.2rem; cursor: pointer; transition: color .15s; }
+.about-close:hover { color: #e8ff3b; }
 
 /* GRID */
 .grid-wrapper { max-width: 1200px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
@@ -396,7 +405,7 @@ function renderIndex() {
 
   if (allPosts.length === 0) {
     app.innerHTML = `
-      <div class="masthead"><div class="masthead-eyebrow">Writing Archive</div><h1>WRITING ARCHIVE</h1></div>
+      <div class="masthead"><img src="https://raw.githubusercontent.com/rileywallaceriley/blog/refs/heads/main/F732D3F0-C9A9-4EFB-885A-25DFE733E530.jpeg" alt="Riley Wallace" class="masthead-logo"><button class="about-btn" onclick="openAbout()">About</button></div>
       <div class="state-msg"><span>NO DATA</span>Click <strong>⚙ Sources</strong> to configure your JSON files.</div>`;
     return;
   }
@@ -422,7 +431,7 @@ function renderIndex() {
 
   app.innerHTML = `
     <div id="view-index">
-      <div class="masthead"><div class="masthead-eyebrow">${subtitle}</div><h1>WRITING ARCHIVE</h1></div>
+      <div class="masthead"><img src="https://raw.githubusercontent.com/rileywallaceriley/blog/refs/heads/main/F732D3F0-C9A9-4EFB-885A-25DFE733E530.jpeg" alt="Riley Wallace" class="masthead-logo"><div class="masthead-eyebrow">${subtitle}</div><button class="about-btn" onclick="openAbout()">About</button></div>
       ${renderFilterBar()}
       <div class="grid-wrapper">
         ${count ? `<div class="post-grid">${cards}</div>` : `<div class="state-msg"><span>0</span>No posts match.</div>`}
@@ -622,10 +631,25 @@ window.addEventListener('scroll', () => {
   document.getElementById('scroll-top').classList.toggle('visible', window.scrollY > 500);
 });
 
+
+function openAbout()  { document.getElementById('about-modal').style.display = 'flex'; }
+function closeAbout() { document.getElementById('about-modal').style.display = 'none'; }
+
 // ── INIT ─────────────────────────────────────────────────────────
 updateAIBtn();
 loadAllSources();
 </script>
 
+<!-- ABOUT MODAL -->
+
+<div class="about-modal-bg" id="about-modal" style="display:none;" onclick="if(event.target===this)closeAbout()">
+  <div class="about-modal">
+    <button class="about-close" onclick="closeAbout()">✕</button>
+    <h2>About Riley Wallace</h2>
+    <p>Riley Wallace is a Toronto-based hip-hop journalist and music critic whose work has appeared in HipHopDX, Exclaim!, XXL Magazine and Above Average Hip Hop.</p>
+    <p>This archive collects selected writing published between 2014 and 2025, preserving interviews, reviews, editorials, and longform journalism spanning more than a decade of hip-hop coverage.</p>
+    <p>Following the removal of HipHopDX's historical online archive — which resulted in the deletion of a significant volume of culturally important music journalism — this collection also serves as a preservation effort, safeguarding work from the site that would otherwise be lost.</p>
+  </div>
+</div>
 </body>
 </html>
