@@ -160,11 +160,11 @@ const SYSTEM_PROMPT = `You are a professional copy editor. You will be given the
 
 Your job is to return a fully corrected version of the article with these fixes applied:
 
-1. PARAGRAPH BREAKS: The text may be one long block with no paragraph breaks, or breaks may be missing between sentences. Add proper paragraph breaks. Each paragraph should be a distinct idea or topic, around 3-5 sentences. Separate paragraphs with exactly ONE blank line.
+1. PARAGRAPH BREAKS: The input already has paragraph breaks marked by blank lines (two newline characters). PRESERVE all existing paragraph breaks exactly where they are. Do NOT merge paragraphs together. Do NOT remove blank lines between paragraphs. Each paragraph in your output MUST be separated by exactly two newline characters (a blank line). This is critical.
 
 2. QUOTE SPACING: The CMS export created broken spacing around quotation marks. Fix all of these:
    - Space after opening quote: " word" → "word"
-   - Space before closing quote: "word " → "word"  
+   - Space before closing quote: "word " → "word"
    - Missing space before opening quote: said"Hello → said "Hello
    - Missing space after closing quote: "word"He said → "word" He said
    - Mismatched quotes: "word' or 'word" → "word"
@@ -173,7 +173,9 @@ Your job is to return a fully corrected version of the article with these fixes 
 
 4. DO NOT change the author's words, meaning, or style. Do not rewrite sentences.
 
-Return ONLY the corrected article text with blank lines between paragraphs. No commentary, no explanation.`;
+CRITICAL: Your output must have a blank line (empty line) between every paragraph, exactly as the input does. Never collapse multiple paragraphs into one.
+
+Return ONLY the corrected article text. No commentary, no explanation.`;
 
 const TITLE_PROMPT = `Fix this article title. Rules:
 1. Fix mismatched quotes: "word' or 'word" should both become "word"
@@ -251,20 +253,28 @@ async function startCleaning() {
 
       // Clean body — send raw text, Claude fixes everything
       const stripped = rawContent
+        .replace(/<\/p>/gi, '')// remove stray p tags if any
+
         .replace(/<https?:\/\/[^>]+>/g, '')
         .replace(/https?:\/\/\S+/g, '')
         .replace(/<[^>]+>/g, '')
         .replace(/\[content_ad_unit[^\]]*\]/g, '')
-        .replace(/ {2,}/g, ' ')
+        .replace(/[ 	]{2,}/g, ' ')
         .trim();
 
       const cleanedBody = await callClaude(apiKey, SYSTEM_PROMPT, stripped);
       await sleep(500);
 
       // Convert paragraphs to HTML
-      const html = cleanedBody
-        ? cleanedBody.split(/\n\n+/).map(p => p.replace(/\n/g, ' ').trim()).filter(Boolean).map(p => '<p>' + p + '</p>').join('')
-        : '<p>' + stripped + '</p>';
+      // Fallback: if GPT returned single \n between paragraphs, treat those as breaks too
+      const paraText = cleanedBody || stripped;
+      const html = paraText
+        .replace(/\n{3,}/g, '\n\n')
+        .split(/\n\n/)
+        .map(p => p.replace(/\n/g, ' ').trim())
+        .filter(Boolean)
+        .map(p => '<p>' + p + '</p>')
+        .join('\n');
 
       cleanedPosts.push(Object.assign({}, post, {
         title: cleanedTitle || rawTitle,
