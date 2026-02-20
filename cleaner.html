@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Post Cleaner</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0a0a0a; color: #e8e2d9; font-family: 'DM Sans', sans-serif; font-size: 15px; line-height: 1.6; min-height: 100vh; padding: 2rem; }
+
+  h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; color: #e8ff3b; letter-spacing: .04em; margin-bottom: .25rem; }
+  .subtitle { color: #555; font-size: .85rem; margin-bottom: 2.5rem; }
+
+  .card { background: #111; border: 1px solid #1f1f1f; padding: 1.5rem; margin-bottom: 1rem; border-radius: 2px; }
+  label { display: block; font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: #555; margin-bottom: .5rem; }
+
+  input[type="password"], textarea, input[type="text"] {
+    width: 100%; background: #0a0a0a; border: 1px solid #1f1f1f;
+    color: #e8e2d9; font-family: 'DM Sans', sans-serif; font-size: .9rem;
+    padding: .7rem 1rem; outline: none; border-radius: 2px;
+    transition: border-color .2s;
+  }
+  input:focus, textarea:focus { border-color: #e8ff3b; }
+  textarea { resize: vertical; min-height: 120px; }
+
+  .row { display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; }
+  .row .field { flex: 1; min-width: 200px; }
+
+  .btn {
+    background: #e8ff3b; color: #000; border: none; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: .85rem; font-weight: 600;
+    letter-spacing: .06em; text-transform: uppercase; padding: .7rem 1.6rem;
+    border-radius: 2px; transition: opacity .15s; white-space: nowrap;
+  }
+  .btn:hover { opacity: .85; }
+  .btn:disabled { opacity: .3; cursor: not-allowed; }
+  .btn-ghost { background: transparent; border: 1px solid #2a2a2a; color: #888; }
+  .btn-ghost:hover:not(:disabled) { border-color: #e8ff3b; color: #e8ff3b; opacity: 1; }
+
+  #progress-wrap { display: none; }
+  .progress-bar-bg { background: #1a1a1a; height: 4px; border-radius: 2px; margin: 1rem 0; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: #e8ff3b; width: 0%; transition: width .3s ease; }
+  .progress-text { font-size: .8rem; color: #888; margin-bottom: .5rem; }
+
+  #log { background: #0a0a0a; border: 1px solid #1a1a1a; padding: 1rem; height: 200px; overflow-y: auto; font-size: .78rem; font-family: monospace; color: #666; border-radius: 2px; }
+  .log-ok   { color: #4a9; }
+  .log-err  { color: #e55; }
+  .log-info { color: #888; }
+
+  .stats { display: flex; gap: 1.5rem; margin-top: 1rem; flex-wrap: wrap; }
+  .stat { font-size: .78rem; color: #555; }
+  .stat strong { color: #e8e2d9; display: block; font-size: 1.4rem; font-family: 'Bebas Neue', sans-serif; }
+
+  #download-wrap { display: none; margin-top: 1rem; }
+
+  .tip { font-size: .78rem; color: #444; margin-top: .5rem; line-height: 1.5; }
+  .tip a { color: #e8ff3b; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<h1>Post Cleaner</h1>
+<p class="subtitle">Fixes quote spacing, mismatched quotes, and paragraph breaks using Claude AI</p>
+
+<div class="card">
+  <label>Anthropic API Key</label>
+  <input type="password" id="api-key" placeholder="sk-ant-…" />
+  <p class="tip">Your key is never stored or sent anywhere except directly to Anthropic. Get one at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></p>
+</div>
+
+<div class="card">
+  <label>Source Name (stamped on every post)</label>
+  <input type="text" id="source-name" placeholder="e.g. HipHopDX" style="max-width:300px;" />
+</div>
+
+<div class="card">
+  <label>Paste your JSON here</label>
+  <textarea id="json-input" placeholder='[{"post_name": "...", "title": "...", "clean_content": "..."}]'></textarea>
+  <p class="tip">Paste the full contents of your posts JSON file</p>
+</div>
+
+<div class="card">
+  <label>Test Mode — only clean first N posts (leave blank for all)</label>
+  <input type="text" id="test-limit" placeholder="e.g. 5" style="max-width:120px;" />
+  <p class="tip">Run a small batch first to check quality before processing all 900+</p>
+</div>
+
+<div class="row" style="margin-bottom:1rem;">
+  <button class="btn" id="start-btn" onclick="startCleaning()">Start Cleaning</button>
+  <button class="btn btn-ghost" id="stop-btn" onclick="stopCleaning()" disabled>Stop</button>
+</div>
+
+<div class="card" id="progress-wrap">
+  <div class="progress-text" id="progress-text">Starting…</div>
+  <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-bar"></div></div>
+  <div id="log"></div>
+  <div class="stats">
+    <div class="stat"><strong id="stat-done">0</strong>Cleaned</div>
+    <div class="stat"><strong id="stat-skip">0</strong>Skipped</div>
+    <div class="stat"><strong id="stat-err">0</strong>Errors</div>
+    <div class="stat"><strong id="stat-remain">—</strong>Remaining</div>
+  </div>
+  <div id="download-wrap">
+    <button class="btn" onclick="downloadJSON()" style="margin-top:1rem;">Download Cleaned JSON</button>
+  </div>
+</div>
+
+<script>
+let running = false;
+let cleanedPosts = [];
+let statDone = 0, statSkip = 0, statErr = 0;
+
+function log(msg, type) {
+  const el = document.getElementById('log');
+  const line = document.createElement('div');
+  line.className = 'log-' + (type || 'info');
+  line.textContent = msg;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+function setProgress(current, total) {
+  const pct = total ? Math.round((current / total) * 100) : 0;
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-text').textContent = current + ' / ' + total + ' posts (' + pct + '%)';
+  document.getElementById('stat-done').textContent = statDone;
+  document.getElementById('stat-skip').textContent = statSkip;
+  document.getElementById('stat-err').textContent = statErr;
+  document.getElementById('stat-remain').textContent = Math.max(0, total - current);
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function callClaude(apiKey, system, user) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 8000,
+      system: system,
+      messages: [{ role: 'user', content: user }]
+    })
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error('API ' + res.status + ': ' + err);
+  }
+  const data = await res.json();
+  return data.content && data.content[0] ? data.content[0].text.trim() : null;
+}
+
+const SYSTEM_PROMPT = `You are a professional copy editor. You will be given the raw text of a music journalism article that was scraped from a CMS and contains formatting artifacts.
+
+Your job is to return a fully corrected version of the article with these fixes applied:
+
+1. PARAGRAPH BREAKS: The text may be one long block with no paragraph breaks, or breaks may be missing between sentences. Add proper paragraph breaks. Each paragraph should be a distinct idea or topic, around 3-5 sentences. Separate paragraphs with exactly ONE blank line.
+
+2. QUOTE SPACING: The CMS export created broken spacing around quotation marks. Fix all of these:
+   - Space after opening quote: " word" → "word"
+   - Space before closing quote: "word " → "word"  
+   - Missing space before opening quote: said"Hello → said "Hello
+   - Missing space after closing quote: "word"He said → "word" He said
+   - Mismatched quotes: "word' or 'word" → "word"
+
+3. TYPOS AND PUNCTUATION: Fix obvious typos and broken punctuation.
+
+4. DO NOT change the author's words, meaning, or style. Do not rewrite sentences.
+
+Return ONLY the corrected article text with blank lines between paragraphs. No commentary, no explanation.`;
+
+const TITLE_PROMPT = `Fix this article title. Rules:
+1. Fix mismatched quotes: "word' or 'word" should both become "word"
+2. Fix spaces inside quotes: " word" → "word"  
+3. Fix typos and capitalisation errors
+Return ONLY the corrected title. Nothing else.`;
+
+function stopCleaning() {
+  running = false;
+  document.getElementById('stop-btn').disabled = true;
+  log('Stopped by user.', 'err');
+}
+
+async function startCleaning() {
+  const apiKey    = document.getElementById('api-key').value.trim();
+  const sourceName = document.getElementById('source-name').value.trim();
+  const jsonText  = document.getElementById('json-input').value.trim();
+
+  if (!apiKey) { alert('Please enter your API key.'); return; }
+  if (!jsonText) { alert('Please paste your JSON.'); return; }
+
+  let posts;
+  try {
+    posts = JSON.parse(jsonText);
+    if (!Array.isArray(posts)) throw new Error('JSON must be an array');
+  } catch (e) {
+    alert('Invalid JSON: ' + e.message);
+    return;
+  }
+
+  running = true;
+  statDone = 0; statSkip = 0; statErr = 0;
+  cleanedPosts = [];
+
+  document.getElementById('progress-wrap').style.display = 'block';
+  document.getElementById('download-wrap').style.display = 'none';
+  document.getElementById('start-btn').disabled = true;
+  document.getElementById('stop-btn').disabled = false;
+  document.getElementById('log').innerHTML = '';
+
+  log('Starting — ' + posts.length + ' posts to clean', 'info');
+  log('Model: claude-sonnet-4-20250514', 'info');
+
+  const limitVal = parseInt(document.getElementById('test-limit').value.trim());
+  const limit = !isNaN(limitVal) && limitVal > 0 ? limitVal : posts.length;
+  const total = Math.min(limit, posts.length);
+
+  if (limit < posts.length) {
+    log('TEST MODE: processing first ' + limit + ' posts only', 'info');
+  }
+
+  for (let i = 0; i < total; i++) {
+    if (!running) break;
+
+    const post = posts[i];
+    setProgress(i, total);
+
+    const rawContent = post.clean_content || post.content || '';
+    const rawTitle   = post.title || '';
+
+    // Skip if very short / empty
+    if (!rawContent || rawContent.length < 50) {
+      log('[' + (i+1) + '/' + total + '] SKIP (no content): ' + rawTitle.slice(0, 50), 'info');
+      cleanedPosts.push(Object.assign({}, post, { source: sourceName || post.source }));
+      statSkip++;
+      continue;
+    }
+
+    log('[' + (i+1) + '/' + total + '] Cleaning: ' + rawTitle.slice(0, 60), 'info');
+
+    try {
+      // Clean title
+      const cleanedTitle = await callClaude(apiKey, TITLE_PROMPT, rawTitle);
+      await sleep(300);
+
+      // Clean body — send raw text, Claude fixes everything
+      const stripped = rawContent
+        .replace(/<https?:\/\/[^>]+>/g, '')
+        .replace(/https?:\/\/\S+/g, '')
+        .replace(/<[^>]+>/g, '')
+        .replace(/\[content_ad_unit[^\]]*\]/g, '')
+        .replace(/ {2,}/g, ' ')
+        .trim();
+
+      const cleanedBody = await callClaude(apiKey, SYSTEM_PROMPT, stripped);
+      await sleep(500);
+
+      // Convert paragraphs to HTML
+      const html = cleanedBody
+        ? cleanedBody.split(/\n\n+/).map(p => p.replace(/\n/g, ' ').trim()).filter(Boolean).map(p => '<p>' + p + '</p>').join('')
+        : '<p>' + stripped + '</p>';
+
+      cleanedPosts.push(Object.assign({}, post, {
+        title: cleanedTitle || rawTitle,
+        clean_content: html,
+        source: sourceName || post.source,
+        ai_cleaned: true
+      }));
+
+      statDone++;
+      log('[' + (i+1) + '/' + total + '] OK: ' + (cleanedTitle || rawTitle).slice(0, 60), 'ok');
+
+    } catch (e) {
+      log('[' + (i+1) + '/' + total + '] ERROR: ' + e.message, 'err');
+      cleanedPosts.push(Object.assign({}, post, { source: sourceName || post.source }));
+      statErr++;
+      await sleep(2000);
+    }
+  }
+
+  setProgress(total, total);
+  document.getElementById('start-btn').disabled = false;
+  document.getElementById('stop-btn').disabled = true;
+  document.getElementById('download-wrap').style.display = 'block';
+  log('All done! ' + statDone + ' cleaned, ' + statSkip + ' skipped, ' + statErr + ' errors.', 'ok');
+}
+
+function downloadJSON() {
+  const blob = new Blob([JSON.stringify(cleanedPosts, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'posts_cleaned.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
