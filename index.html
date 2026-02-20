@@ -175,7 +175,7 @@ nav { padding: .8rem 1rem; }
 <div id="loading-bar"></div>
 
 <nav>
-  <div class="nav-logo" onclick="goHome()">Riley Wallace</div>
+  <div class="nav-logo" onclick="goHome()" style="font-size:.9rem;opacity:.5;">↑ Home</div>
   <div class="nav-right">
     <div class="search-wrap">
       <input type="text" id="search-input" placeholder="Search posts…" oninput="filterPosts()">
@@ -236,10 +236,7 @@ const contentCache = new Map();
 
 // ── SOURCES ─────────────────────────────────────────────────────
 function getSources() {
-  try {
-    const saved = localStorage.getItem('rw_sources');
-    return saved ? JSON.parse(saved) : DEFAULT_SOURCES;
-  } catch { return DEFAULT_SOURCES; }
+  return DEFAULT_SOURCES;
 }
 
 function getApiKey() { return localStorage.getItem('rw_api_key') || ''; }
@@ -405,7 +402,7 @@ function renderIndex() {
 
   if (allPosts.length === 0) {
     app.innerHTML = `
-      <div class="masthead"><img src="https://raw.githubusercontent.com/rileywallaceriley/blog/refs/heads/main/F732D3F0-C9A9-4EFB-885A-25DFE733E530.jpeg" alt="Riley Wallace" class="masthead-logo"><button class="about-btn" onclick="openAbout()">About</button></div>
+      <div class="masthead"><img src="https://raw.githubusercontent.com/rileywallaceriley/blog/main/F732D3F0-C9A9-4EFB-885A-25DFE733E530.jpeg" alt="Riley Wallace" class="masthead-logo"><button class="about-btn" onclick="openAbout()">About</button></div>
       <div class="state-msg"><span>NO DATA</span>Click <strong>⚙ Sources</strong> to configure your JSON files.</div>`;
     return;
   }
@@ -431,7 +428,7 @@ function renderIndex() {
 
   app.innerHTML = `
     <div id="view-index">
-      <div class="masthead"><img src="https://raw.githubusercontent.com/rileywallaceriley/blog/refs/heads/main/F732D3F0-C9A9-4EFB-885A-25DFE733E530.jpeg" alt="Riley Wallace" class="masthead-logo"><div class="masthead-eyebrow">${subtitle}</div><button class="about-btn" onclick="openAbout()">About</button></div>
+      <div class="masthead"><img src="https://raw.githubusercontent.com/rileywallaceriley/blog/main/F732D3F0-C9A9-4EFB-885A-25DFE733E530.jpeg" alt="Riley Wallace" class="masthead-logo"><div class="masthead-eyebrow">${subtitle}</div><button class="about-btn" onclick="openAbout()">About</button></div>
       ${renderFilterBar()}
       <div class="grid-wrapper">
         ${count ? `<div class="post-grid">${cards}</div>` : `<div class="state-msg"><span>0</span>No posts match.</div>`}
