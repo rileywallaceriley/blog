@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sitemap Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0a0a0a; color: #e8e2d9; font-family: 'DM Sans', sans-serif; font-size: 15px; line-height: 1.6; padding: 2rem; }
+  h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; color: #e8ff3b; margin-bottom: .25rem; }
+  .sub { color: #555; font-size: .85rem; margin-bottom: 2rem; }
+  .card { background: #111; border: 1px solid #1f1f1f; padding: 1.5rem; margin-bottom: 1rem; border-radius: 2px; }
+  label { display: block; font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: #555; margin-bottom: .5rem; }
+  input[type="text"] { width: 100%; background: #0a0a0a; border: 1px solid #1f1f1f; color: #e8e2d9; font-family: 'DM Sans', sans-serif; font-size: .9rem; padding: .7rem 1rem; outline: none; border-radius: 2px; transition: border-color .2s; }
+  input:focus { border-color: #e8ff3b; }
+  .btn { background: #e8ff3b; color: #000; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: .85rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: .7rem 1.6rem; border-radius: 2px; transition: opacity .15s; }
+  .btn:hover { opacity: .85; }
+  .btn:disabled { opacity: .3; cursor: not-allowed; }
+  .stat { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: #e8ff3b; }
+  .stat span { font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: #555; display: block; font-family: 'DM Sans', sans-serif; }
+  #log { background: #0a0a0a; border: 1px solid #1a1a1a; padding: 1rem; max-height: 200px; overflow-y: auto; font-size: .78rem; font-family: monospace; color: #666; border-radius: 2px; margin-top: 1rem; }
+  .log-ok { color: #4a9; }
+  .log-err { color: #e55; }
+  #result { display: none; }
+</style>
+</head>
+<body>
+
+<h1>Sitemap Generator</h1>
+<p class="sub">Fetches your JSON sources and builds a sitemap.xml for Google</p>
+
+<div class="card">
+  <label>Your Site Domain</label>
+  <input type="text" id="domain" value="https://rileywallaceriley.github.io/blog" placeholder="https://yourdomain.com" />
+</div>
+
+<div class="card">
+  <label>JSON Sources (one URL per line)</label>
+  <textarea id="sources" style="width:100%;background:#0a0a0a;border:1px solid #1f1f1f;color:#e8e2d9;font-family:monospace;font-size:.8rem;padding:.7rem 1rem;outline:none;border-radius:2px;min-height:120px;resize:vertical;">https://raw.githubusercontent.com/rileywallaceriley/blog/refs/heads/main/posts_no_listicles%202.json
+https://raw.githubusercontent.com/rileywallaceriley/blog/refs/heads/main/aboveaverage_no_song_no_artist_titles.json
+https://raw.githubusercontent.com/rileywallaceriley/blog/refs/heads/main/exclaim_formatted.json</textarea>
+</div>
+
+<button class="btn" onclick="generate()">Generate Sitemap</button>
+
+<div id="result" class="card" style="margin-top:1rem;">
+  <div style="display:flex;gap:2rem;margin-bottom:1rem;">
+    <div class="stat" id="stat-count">0<span>URLs</span></div>
+  </div>
+  <div id="log"></div>
+  <button class="btn" onclick="download()" style="margin-top:1rem;">Download sitemap.xml</button>
+</div>
+
+<script>
+let sitemapXML = '';
+
+function log(msg, type) {
+  const el = document.getElementById('log');
+  const line = document.createElement('div');
+  if (type) line.className = 'log-' + type;
+  line.textContent = msg;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+async function generate() {
+  const domain = document.getElementById('domain').value.trim().replace(/\/$/, '');
+  const sourceURLs = document.getElementById('sources').value.trim().split('\n').map(s => s.trim()).filter(Boolean);
+  document.getElementById('log').innerHTML = '';
+  document.getElementById('result').style.display = 'block';
+
+  const allSlugs = new Set();
+  allSlugs.add(''); // homepage
+
+  for (const url of sourceURLs) {
+    try {
+      log('Fetching: ' + url);
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const posts = await res.json();
+      const arr = Array.isArray(posts) ? posts : (posts.posts || posts.data || []);
+      arr.forEach(p => {
+        const slug = p.post_name || p.slug;
+        if (slug) allSlugs.add('post/' + slug);
+      });
+      log('✓ ' + arr.length + ' posts from ' + url.split('/').pop(), 'ok');
+    } catch(e) {
+      log('✗ Error: ' + e.message + ' — ' + url, 'err');
+    }
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const urls = [...allSlugs].map(slug => `
+  <url>
+    <loc>${domain}/${slug}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>${slug === '' ? 'weekly' : 'monthly'}</changefreq>
+    <priority>${slug === '' ? '1.0' : '0.8'}</priority>
+  </url>`).join('');
+
+  sitemapXML = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}
+</urlset>`;
+
+  document.getElementById('stat-count').innerHTML = allSlugs.size + '<span>URLs</span>';
+  log('Done — ' + allSlugs.size + ' URLs in sitemap', 'ok');
+}
+
+function download() {
+  const blob = new Blob([sitemapXML], { type: 'application/xml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'sitemap.xml'; a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+
+</body>
+</html>
