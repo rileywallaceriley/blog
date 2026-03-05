@@ -1,16 +1,15 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<script>
-  // Redirect /post/slug back to index with the slug preserved
-  const path = window.location.pathname;
-  if (path.startsWith('/post/')) {
-    sessionStorage.setItem('rw_redirect', path);
-  }
-  window.location.replace('/');
-</script>
+  <meta charset="UTF-8">
+  <title>Riley Wallace</title>
+  <script>
+    // Save the full intended path (e.g. /blog/post/some-slug) so index.html can restore it
+    sessionStorage.setItem('rw_redirect', window.location.pathname + window.location.search);
+    // Redirect to the repo root — adjust if your base path differs
+    window.location.replace('/blog/');
+  </script>
 </head>
 <body></body>
 </html>
