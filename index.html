@@ -293,7 +293,6 @@ function excerpt(text, len=160) {
 
 function rawToHTML(text) {
   if (!text) return '';
-  // If already has <p> tags, return as-is — don't strip them
   if (/<p[\s>]/i.test(text)) return text;
   const c = text.replace(/<https?:\/\/[^>]+>/g,'').replace(/<[^>]+>/g,'').trim();
   return c.split(/\n\n+/).map(p=>`<p>${p.trim()}</p>`).filter(p=>p!=='<p></p>').join('');
@@ -312,28 +311,38 @@ function skeletonHTML() {
 }
 
 // ── URL / SHARING ───────────────────────────────────────────────
-function getHashPost() {
-  // Support both /post/slug (new) and #post/slug (legacy)
+function getBasePath() {
   const path = window.location.pathname;
-  if (path.startsWith('/post/')) return decodeURIComponent(path.slice(6));
+  const postIdx = path.indexOf('/post/');
+  if (postIdx !== -1) return path.slice(0, postIdx);
+  return path.replace(/\/$/, '');
+}
+
+function getHashPost() {
+  const path = window.location.pathname;
+  const base = getBasePath();
+  const postPath = path.slice(base.length);
+  if (postPath.startsWith('/post/')) return decodeURIComponent(postPath.slice(6));
+  // Legacy hash support
   const h = window.location.hash;
   if (h.startsWith('#post/')) return decodeURIComponent(h.slice(6));
   return null;
 }
 
 function setHashPost(postName) {
-  const url = '/post/' + encodeURIComponent(postName);
+  const url = getBasePath() + '/post/' + encodeURIComponent(postName);
   history.pushState({ postName }, '', url);
   document.title = 'Riley Wallace';
 }
 
 function clearHash() {
-  history.pushState(null, '', '/');
+  const base = getBasePath() || '/';
+  history.pushState(null, '', base || '/');
   document.title = 'Riley Wallace — Writing Archive';
 }
 
 function copyShareLink(postName) {
-  const url = window.location.origin + '/post/' + encodeURIComponent(postName);
+  const url = window.location.origin + getBasePath() + '/post/' + encodeURIComponent(postName);
   navigator.clipboard.writeText(url).then(() => {
     const btn = document.getElementById('share-btn');
     if (btn) { btn.textContent = '✓ Copied'; btn.classList.add('copied'); }
@@ -672,7 +681,7 @@ window.addEventListener('scroll', () => {
   document.getElementById('scroll-top').classList.toggle('visible', window.scrollY > 500);
 });
 
-
+// ── HOME SCREEN BANNER ──────────────────────────────────────────
 function dismissBanner() {
   document.getElementById('hs-banner').style.display = 'none';
   sessionStorage.setItem('hs_dismissed', '1');
@@ -680,11 +689,11 @@ function dismissBanner() {
 function openHSModal()  { document.getElementById('hs-modal').style.display = 'flex'; }
 function closeHSModal() { document.getElementById('hs-modal').style.display = 'none'; }
 
-// Hide banner if already dismissed this session
 if (sessionStorage.getItem('hs_dismissed')) {
   document.getElementById('hs-banner').style.display = 'none';
 }
 
+// ── META ─────────────────────────────────────────────────────────
 function updateMeta(title, description) {
   document.title = title;
   const set = (id, val) => { const el = document.getElementById(id); if (el) el.setAttribute('content', val); };
@@ -702,6 +711,7 @@ function resetMeta() {
   );
 }
 
+// ── ABOUT MODAL ──────────────────────────────────────────────────
 function openAbout()  { document.getElementById('about-modal').style.display = 'flex'; }
 function closeAbout() { document.getElementById('about-modal').style.display = 'none'; }
 
@@ -731,21 +741,15 @@ loadAllSources();
   <div class="hs-modal">
     <button class="hs-modal-close" onclick="closeHSModal()">✕</button>
     <h2>Add to Home Screen</h2>
-
-```
-<p style="font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:#555;margin-bottom:1rem;">iPhone / Safari</p>
-<div class="hs-step"><div class="hs-step-num">1</div><p>Tap the <strong>Share</strong> button at the bottom of your browser (the box with an arrow pointing up)</p></div>
-<div class="hs-step"><div class="hs-step-num">2</div><p>Scroll down and tap <strong>Add to Home Screen</strong></p></div>
-<div class="hs-step"><div class="hs-step-num">3</div><p>Tap <strong>Add</strong> in the top right — done!</p></div>
-
-<hr class="hs-divider">
-
-<p style="font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:#555;margin-bottom:1rem;">Android / Chrome</p>
-<div class="hs-step"><div class="hs-step-num">1</div><p>Tap the <strong>⋮ menu</strong> in the top right of Chrome</p></div>
-<div class="hs-step"><div class="hs-step-num">2</div><p>Tap <strong>Add to Home screen</strong></p></div>
-<div class="hs-step"><div class="hs-step-num">3</div><p>Tap <strong>Add</strong> to confirm</p></div>
-```
-
+    <p style="font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:#555;margin-bottom:1rem;">iPhone / Safari</p>
+    <div class="hs-step"><div class="hs-step-num">1</div><p>Tap the <strong>Share</strong> button at the bottom of your browser (the box with an arrow pointing up)</p></div>
+    <div class="hs-step"><div class="hs-step-num">2</div><p>Scroll down and tap <strong>Add to Home Screen</strong></p></div>
+    <div class="hs-step"><div class="hs-step-num">3</div><p>Tap <strong>Add</strong> in the top right — done!</p></div>
+    <hr class="hs-divider">
+    <p style="font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:#555;margin-bottom:1rem;">Android / Chrome</p>
+    <div class="hs-step"><div class="hs-step-num">1</div><p>Tap the <strong>⋮ menu</strong> in the top right of Chrome</p></div>
+    <div class="hs-step"><div class="hs-step-num">2</div><p>Tap <strong>Add to Home screen</strong></p></div>
+    <div class="hs-step"><div class="hs-step-num">3</div><p>Tap <strong>Add</strong> to confirm</p></div>
   </div>
 </div>
 
