@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Reddit Stats" />
+  <title>Reddit Stats</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --orange: #FF4500;
+      --orange-dim: #c73600;
+      --bg: #0d0d0d;
+      --surface: #161616;
+      --surface2: #1f1f1f;
+      --border: #2a2a2a;
+      --text: #f0ece4;
+      --muted: #7a7572;
+      --accent: #FF6534;
+    }
+
+```
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  padding: env(safe-area-inset-top, 20px) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 20px) env(safe-area-inset-left, 0);
+  overflow-x: hidden;
+}
+
+.grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+header {
+  padding: 40px 28px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.logo {
+  width: 40px;
+  height: 40px;
+  background: var(--orange);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.logo svg { width: 22px; height: 22px; fill: white; }
+
+header h1 {
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+
+header span {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+  display: block;
+  margin-top: 1px;
+}
+
+.search-section {
+  padding: 0 28px 36px;
+}
+
+.search-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.input-wrap {
+  flex: 1;
+  position: relative;
+}
+
+.prefix {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+input[type="text"] {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 14px 14px 36px;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.9rem;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+  -webkit-appearance: none;
+}
+
+input[type="text"]:focus {
+  border-color: var(--orange);
+}
+
+input[type="text"]::placeholder { color: var(--muted); }
+
+button {
+  background: var(--orange);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 20px;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:active { transform: scale(0.97); background: var(--orange-dim); }
+
+/* ── Stats ── */
+#stats { padding: 0 28px 60px; display: none; }
+
+.profile-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+  animation: fadeUp 0.4s ease both;
+}
+
+.avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 2px solid var(--border);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.profile-name {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.profile-age {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255,69,0,0.15);
+  color: var(--accent);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  margin-top: 5px;
+  letter-spacing: 0.05em;
+}
+
+/* Karma big display */
+.karma-total {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 24px;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+  animation: fadeUp 0.4s 0.05s ease both;
+}
+
+.karma-total::before {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 140px; height: 140px;
+  background: radial-gradient(circle, rgba(255,69,0,0.12) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.karma-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.karma-number {
+  font-size: 3.2rem;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  background: linear-gradient(135deg, #fff 30%, var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.karma-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+/* Grid cards */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px;
+  animation: fadeUp 0.4s ease both;
+}
+
+.card:nth-child(1) { animation-delay: 0.1s; }
+.card:nth-child(2) { animation-delay: 0.15s; }
+.card:nth-child(3) { animation-delay: 0.2s; }
+.card:nth-child(4) { animation-delay: 0.25s; }
+
+.card-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.card-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--text);
+}
+
+.card-icon {
+  font-size: 1.1rem;
+  margin-bottom: 6px;
+  display: block;
+}
+
+/* Wide card */
+.card-wide {
+  grid-column: span 2;
+}
+
+.bar-wrap {
+  margin-top: 10px;
+  background: var(--surface2);
+  border-radius: 99px;
+  height: 6px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--orange), var(--accent));
+  border-radius: 99px;
+  transition: width 1s cubic-bezier(0.4,0,0.2,1);
+  width: 0;
+}
+
+.bar-labels {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.bar-labels span { color: var(--text); font-size: 0.7rem; }
+
+/* Error */
+#error {
+  display: none;
+  margin: 0 28px;
+  background: rgba(255,69,0,0.08);
+  border: 1px solid rgba(255,69,0,0.3);
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--accent);
+  animation: fadeUp 0.3s ease both;
+}
+
+/* Loading */
+#loading {
+  display: none;
+  padding: 40px 28px;
+  text-align: center;
+}
+
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--orange);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin: 0 auto 14px;
+}
+
+#loading p {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+/* Footer tip */
+.tip {
+  padding: 0 28px 30px;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--muted);
+  line-height: 1.6;
+  display: none;
+}
+
+.tip strong { color: var(--text); }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* iPad landscape adjustments */
+@media (min-width: 600px) {
+  header { padding: 50px 40px 24px; }
+  .search-section { padding: 0 40px 36px; }
+  #stats { padding: 0 40px 60px; }
+  #error { margin: 0 40px; }
+  #loading { padding: 40px; }
+  .tip { padding: 0 40px 30px; }
+  .grid { grid-template-columns: repeat(4, 1fr); }
+  .card-wide { grid-column: span 2; }
+  .karma-number { font-size: 4rem; }
+}
+```
+
+  </style>
+</head>
+<body>
+  <div class="grain"></div>
+
+  <header>
+    <div class="logo">
+      <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10 0C4.478 0 0 4.478 0 10c0 5.523 4.478 10 10 10 5.523 0 10-4.477 10-10C20 4.478 15.523 0 10 0zm5.677 11.316c.034.222.051.449.051.68 0 2.766-3.224 5.004-7.198 5.004-3.974 0-7.199-2.238-7.199-5.004 0-.231.018-.458.054-.68a1.44 1.44 0 01-.898-1.325 1.44 1.44 0 012.88 0c0 .462-.22.873-.56 1.135 1.047.72 2.49 1.18 4.088 1.222l.777-3.65-2.519.535a1.08 1.08 0 11-.067-.65l2.84-.604a.36.36 0 01.427.27l.868 4.094c1.594-.047 3.031-.509 4.073-1.228a1.44 1.44 0 012.38-1.586 1.44 1.44 0 01-1.016 2.447l.02-.36zM7.2 11.16a1.08 1.08 0 110 2.16 1.08 1.08 0 010-2.16zm5.76 0a1.08 1.08 0 110 2.16 1.08 1.08 0 010-2.16zm-4.815 3.527c.16-.16.418-.16.578 0 .48.48 1.254.48 1.734 0a.408.408 0 11.578.578c-.8.8-2.09.8-2.89 0a.408.408 0 010-.578zM16.56 5.52a1.44 1.44 0 00-1.297 2.065l-2.157.998a.36.36 0 01-.476-.173l-1.1-2.378a1.44 1.44 0 10-.65.3l1.214 2.626a1.08 1.08 0 001.428.52l2.157-.998A1.44 1.44 0 1016.56 5.52z"/>
+      </svg>
+    </div>
+    <div>
+      <h1>Reddit Stats</h1>
+      <span>your profile at a glance</span>
+    </div>
+  </header>
+
+  <section class="search-section">
+    <div class="search-row">
+      <div class="input-wrap">
+        <span class="prefix">u/</span>
+        <input type="text" id="username" placeholder="your_username" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+      </div>
+      <button onclick="fetchStats()">Fetch</button>
+    </div>
+  </section>
+
+  <div id="loading">
+    <div class="spinner"></div>
+    <p>fetching reddit data...</p>
+  </div>
+
+  <div id="error"></div>
+
+  <section id="stats">
+    <div class="profile-head">
+      <div class="avatar" id="avatar">
+        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;padding:8px;opacity:0.3">
+          <path d="M20 4a8 8 0 100 16A8 8 0 0020 4zM6 36c0-7.732 6.268-14 14-14s14 6.268 14 14" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="profile-name" id="pname">—</div>
+        <div class="profile-age" id="page">—</div>
+        <div id="badges"></div>
+      </div>
+    </div>
+
+```
+<div class="karma-total">
+  <div class="karma-label">Total Karma</div>
+  <div class="karma-number" id="totalKarma">0</div>
+  <div class="karma-sub" id="karmaSub">— post · — comment</div>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <span class="card-icon">⬆️</span>
+    <div class="card-label">Post Karma</div>
+    <div class="card-value" id="linkKarma">—</div>
+  </div>
+  <div class="card">
+    <span class="card-icon">💬</span>
+    <div class="card-label">Comment Karma</div>
+    <div class="card-value" id="commentKarma">—</div>
+  </div>
+  <div class="card">
+    <span class="card-icon">🏆</span>
+    <div class="card-label">Awarder Karma</div>
+    <div class="card-value" id="awardeeKarma">—</div>
+  </div>
+  <div class="card">
+    <span class="card-icon">📅</span>
+    <div class="card-label">Days Old</div>
+    <div class="card-value" id="daysOld">—</div>
+  </div>
+
+  <div class="card card-wide">
+    <div class="card-label">Post vs Comment Karma ratio</div>
+    <div class="bar-wrap">
+      <div class="bar-fill" id="ratioBar"></div>
+    </div>
+    <div class="bar-labels">
+      <div>Post <span id="postPct">—</span></div>
+      <div>Comment <span id="commentPct">—</span></div>
+    </div>
+  </div>
+</div>
+```
+
+  </section>
+
+  <div class="tip" id="tip">
+    <strong>Tip:</strong> To add this to your iPad home screen, tap the Share button in Safari, then choose <strong>Add to Home Screen</strong>.
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+
+    function fmt(n) {
+      if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+      if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
+      return n.toLocaleString();
+    }
+
+    function timeAgo(utc) {
+      const created = new Date(utc * 1000);
+      const now = new Date();
+      const days = Math.floor((now - created) / 86400000);
+      const years = Math.floor(days / 365);
+      const months = Math.floor((days % 365) / 30);
+      if (years > 0) return `${years}y ${months}mo old · created ${created.toLocaleDateString('en-US', {month:'short', year:'numeric'})}`;
+      if (months > 0) return `${months} months old`;
+      return `${days} days old`;
+    }
+
+    async function fetchStats() {
+      const raw = $('username').value.trim().replace(/^u\//i, '');
+      if (!raw) return;
+
+      $('stats').style.display = 'none';
+      $('error').style.display = 'none';
+      $('tip').style.display = 'none';
+      $('loading').style.display = 'block';
+
+      try {
+        const res = await fetch(`https://www.reddit.com/user/${encodeURIComponent(raw)}/about.json`, {
+          headers: { 'Accept': 'application/json' }
+        });
+
+        if (res.status === 404) throw new Error(`u/${raw} doesn't exist.`);
+        if (res.status === 403) throw new Error(`u/${raw} is a private or suspended account.`);
+        if (!res.ok) throw new Error(`Reddit returned ${res.status}. Try again.`);
+
+        const json = await res.json();
+        const d = json.data;
+        render(d);
+      } catch (e) {
+        $('loading').style.display = 'none';
+        $('error').style.display = 'block';
+        $('error').textContent = '⚠ ' + e.message;
+      }
+    }
+
+    function render(d) {
+      $('loading').style.display = 'none';
+
+      const lk = d.link_karma || 0;
+      const ck = d.comment_karma || 0;
+      const ak = d.awarder_karma || d.awardee_karma || 0;
+      const total = lk + ck + ak;
+
+      $('pname').textContent = 'u/' + d.name;
+      $('page').textContent = timeAgo(d.created_utc);
+      $('totalKarma').textContent = fmt(total);
+      $('karmaSub').textContent = `${fmt(lk)} post · ${fmt(ck)} comment`;
+      $('linkKarma').textContent = fmt(lk);
+      $('commentKarma').textContent = fmt(ck);
+      $('awardeeKarma').textContent = fmt(ak);
+
+      const days = Math.floor((Date.now() / 1000 - d.created_utc) / 86400);
+      $('daysOld').textContent = days.toLocaleString();
+
+      // Badges
+      const badges = $('badges');
+      badges.innerHTML = '';
+      if (d.is_gold || d.is_mod) {
+        if (d.is_gold) badges.innerHTML += '<span class="badge">⭐ Gold</span> ';
+        if (d.is_mod) badges.innerHTML += '<span class="badge">🛡 Mod</span>';
+      }
+
+      // Avatar
+      if (d.icon_img) {
+        const clean = d.icon_img.replace(/&amp;/g, '&');
+        $('avatar').innerHTML = `<img src="${clean}" alt="avatar" onerror="this.remove()"/>`;
+      }
+
+      // Ratio bar
+      const postFrac = total > 0 ? lk / total : 0.5;
+      setTimeout(() => {
+        $('ratioBar').style.width = (postFrac * 100).toFixed(1) + '%';
+      }, 100);
+      $('postPct').textContent = (postFrac * 100).toFixed(0) + '%';
+      $('commentPct').textContent = ((1 - postFrac) * 100).toFixed(0) + '%';
+
+      $('stats').style.display = 'block';
+      $('tip').style.display = 'block';
+    }
+
+    $('username').addEventListener('keydown', e => {
+      if (e.key === 'Enter') fetchStats();
+    });
+  </script>
+
+</body>
+</html>
