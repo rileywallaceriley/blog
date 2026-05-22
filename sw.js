@@ -1,4 +1,4 @@
-const CACHE = 'rw-v1';
+const CACHE = 'rw-v2';
 const PRECACHE = [
   '/',
   '/index.html',
