@@ -155,9 +155,9 @@ def run():
     for idx, p in enumerate(posts):
         for field in ("content", "clean_content"):
             old = p[field]
-            text = re.sub(r' ?Type="(?:standard|any)"\\]', "", old)
+            text = re.sub(r' ?Type="(?:standard|any)"\]', "", old)
             if field == "content":
-                text = re.sub(r'\\s*(?:REPEAT MEFAN FEEDBACK|Repeat MeFan Feedback)$', "", text)
+                text = re.sub(r'\s*(?:REPEAT MEFAN FEEDBACK|Repeat MeFan Feedback)$', "", text)
             else:
                 text = re.sub(r' Repeat MeFan Feedback(?=</p>$)', "", text)
             if text != old:
