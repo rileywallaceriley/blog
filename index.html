@@ -65,6 +65,13 @@ padding: .28rem .75rem; text-transform: uppercase; transition: all .15s;
 }
 .filter-pill:hover { border-color: #555; color: #aaa; }
 .filter-pill.active { background: #e8ff3b; border-color: #e8ff3b; color: #000; }
+.filter-select {
+background: #111; border: 1px solid #2a2a2a; border-radius: 2px;
+color: #ccc; cursor: pointer; font-family: 'DM Sans', sans-serif;
+font-size: .72rem; font-weight: 500; letter-spacing: .07em;
+padding: .28rem .5rem; text-transform: uppercase;
+}
+.filter-select:focus { border-color: #e8ff3b; outline: none; }
 
 /* ANIMATIONS */
 #view-index { animation: fadeUp .4s ease both; }
@@ -265,6 +272,10 @@ let allPosts      = [];
 let filteredPosts = [];
 let currentQuery  = '';
 let activeSource  = 'All';
+let activeCategory = 'Interview';
+const CATEGORY_ORDER = { 'Interview': 0, 'Review': 1, 'Editorial': 2 };
+const CATEGORY_LABELS = { 'Interview': 'Interviews', 'Review': 'Reviews', 'Editorial': 'Editorial', 'All': 'All Categories' };
+function catOf(p) { return p.category || 'Editorial'; }
 const titleCache   = new Map();
 const contentCache = new Map();
 
@@ -410,11 +421,20 @@ function renderFilterBar() {
   const pills = sources.map(s =>
     `<button class="filter-pill${activeSource===s?' active':''}" onclick="setSource('${s}')">${s}</button>`
   ).join('');
-  return `<div class="filter-bar"><span class="filter-label">Source</span>${pills}</div>`;
+  const catOptions = ['Interview', 'Review', 'Editorial', 'All'].map(c =>
+    `<option value="${c}"${activeCategory===c?' selected':''}>${CATEGORY_LABELS[c]}</option>`
+  ).join('');
+  return `<div class="filter-bar" style="border-bottom:none;padding-bottom:0;"><span class="filter-label">Category</span><select class="filter-select" onchange="setCategory(this.value)">${catOptions}</select></div>` +
+    `<div class="filter-bar"><span class="filter-label">Source</span>${pills}</div>`;
 }
 
 function setSource(name) {
   activeSource = name;
+  applyFilters();
+}
+
+function setCategory(name) {
+  activeCategory = name;
   applyFilters();
 }
 
@@ -423,11 +443,19 @@ function applyFilters() {
   const q = currentQuery;
   filteredPosts = allPosts.filter(p => {
     const matchSource = activeSource === 'All' || p.source === activeSource;
+    const matchCategory = activeCategory === 'All' || catOf(p) === activeCategory;
     const matchQuery  = !q ||
       p.title.toLowerCase().includes(q) ||
       (p.clean_content || p.content || '').toLowerCase().includes(q);
-    return matchSource && matchQuery;
+    return matchSource && matchCategory && matchQuery;
   });
+  if (activeCategory === 'All') {
+    filteredPosts.sort((a, b) =>
+      ((CATEGORY_ORDER[catOf(a)] ?? 2) - (CATEGORY_ORDER[catOf(b)] ?? 2)) ||
+      (new Date(b.date) - new Date(a.date)));
+  } else {
+    filteredPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
+  }
   renderIndex();
 }
 
@@ -443,8 +471,8 @@ function goHome() {
   document.getElementById('search-input').value = '';
   currentQuery = '';
   activeSource = 'All';
-  filteredPosts = [...allPosts];
-  renderIndex();
+  activeCategory = 'Interview';
+  applyFilters();
 }
 
 function renderIndex() {
@@ -461,15 +489,17 @@ function renderIndex() {
   const total = allPosts.length;
   const subtitle = currentQuery
     ? `${count} result${count!==1?'s':''} for "${currentQuery}"`
-    : activeSource !== 'All' ? `${count} post${count!==1?'s':''} — ${activeSource}`
-    : `${total} post${total!==1?'s':''}`;
+    : (activeCategory !== 'All' || activeSource !== 'All')
+      ? `${count} post${count!==1?'s':''}` + (activeCategory !== 'All' ? ` — ${CATEGORY_LABELS[activeCategory]}` : '') + (activeSource !== 'All' ? ` — ${activeSource}` : '')
+      : `${total} post${total!==1?'s':''}`;
 
   const cards = filteredPosts.map((p, i) => {
     const title = titleCache.get(p.post_name) || p.title;
     const sourceTag = p.source ? `<span class="card-source">${p.source}</span>` : '';
+    const catTag = p.category ? `<span class="card-source">${p.category}</span>` : '';
     return `
       <div class="post-card" onclick="openPost('${encodeURIComponent(p.post_name)}')">
-        <div class="card-meta"><span class="card-date">${formatDate(p.date)}</span>${sourceTag}</div>
+        <div class="card-meta"><span class="card-date">${formatDate(p.date)}</span>${sourceTag}${catTag}</div>
         <div class="card-title" data-idx="${i}">${title}</div>
         <div class="card-excerpt">${excerpt(p.clean_content || p.content)}</div>
         <div class="card-arrow">Read →</div>
@@ -610,7 +640,7 @@ async function loadAllSources() {
     if (post) { renderPost(post); return; }
   }
 
-  renderIndex();
+  applyFilters();
 }
 
 // ── SOURCES MODAL ───────────────────────────────────────────────
