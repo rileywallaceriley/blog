@@ -144,6 +144,126 @@ REPLACEMENTS = [
   ]
 ]
 
+# Additional verified source-text restorations and minor copyedits.
+REPLACEMENTS.extend([
+  [
+    168,
+    [
+      "content",
+      "clean_content"
+    ],
+    "I even tried to use my real name.\" I've been",
+    "I even tried to use my real name. I've been"
+  ],
+  [
+    199,
+    [
+      "content",
+      "clean_content"
+    ],
+    "It was crazy to how the crowd would react",
+    "It was crazy how the crowd would react"
+  ],
+  [
+    182,
+    [
+      "content"
+    ],
+    "McMahon.\n\nWe linked with P",
+    "McMahon. We linked with P"
+  ],
+  [
+    182,
+    [
+      "clean_content"
+    ],
+    "McMahon.</p><p>We linked with P",
+    "McMahon. We linked with P"
+  ],
+  [
+    221,
+    [
+      "content",
+      "clean_content"
+    ],
+    "That was normal for.\"",
+    "That was normal for [the officer].\""
+  ],
+  [
+    221,
+    [
+      "content"
+    ],
+    "project.\"theme vastly",
+    "project.\" Another theme vastly"
+  ],
+  [
+    221,
+    [
+      "clean_content"
+    ],
+    "project. A theme vastly",
+    "project. Another theme vastly"
+  ],
+  [
+    439,
+    [
+      "content"
+    ],
+    "sweeping criminal justice. TMZ",
+    "sweeping criminal justice reform. TMZ"
+  ],
+  [
+    439,
+    [
+      "content"
+    ],
+    "who said the bill not had passed",
+    "who said the bill would not have passed"
+  ],
+  [
+    793,
+    [
+      "content",
+      "clean_content"
+    ],
+    "Does it mean to you to be this ambassador",
+    "What does it mean to you to be this ambassador"
+  ],
+  [
+    185,
+    [
+      "content"
+    ],
+    "Steam Billy Danze's The Baker's Dozen",
+    "Stream Billy Danze's The Baker's Dozen"
+  ],
+  [
+    291,
+    [
+      "content"
+    ],
+    "reason for the spilt as",
+    "reason for the split as"
+  ],
+  [
+    357,
+    [
+      "content"
+    ],
+    "convince current both fans and his new widening audience",
+    "convince both current fans and his growing audience"
+  ],
+  [
+    497,
+    [
+      "content"
+    ],
+    "his critically-acclaimed album",
+    "his critically acclaimed album"
+  ]
+])
+
 def run():
     source = FILE.read_text(encoding="utf-8")
     posts = json.loads(source)
