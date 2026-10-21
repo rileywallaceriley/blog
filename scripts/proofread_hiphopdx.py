@@ -123,8 +123,8 @@ REPLACEMENTS = [
     [
       "clean_content"
     ],
-    "So, 25 years after the Black Sheep debut, what keeps Dres motivated?",
-    "<strong>So, 25 years after the Black Sheep debut, what keeps Dres motivated?</strong>"
+    "<p>So, 25 years after the Black Sheep debut, what keeps Dres motivated?",
+    "<p><strong>So, 25 years after the Black Sheep debut, what keeps Dres motivated?</strong>"
   ],
   [
     493,
@@ -276,6 +276,9 @@ def run():
         for field in ("content", "clean_content"):
             old = p[field]
             text = re.sub(r' ?Type="(?:standard|any)"\]', "", old)
+            if field == "clean_content":
+                text = re.sub(r"(?:<strong>){2,}", "<strong>", text)
+                text = re.sub(r"(?:</strong>){2,}", "</strong>", text)
             if field == "content":
                 text = re.sub(r'\s*(?:REPEAT MEFAN FEEDBACK|Repeat MeFan Feedback)$', "", text)
             else:
