@@ -238,51 +238,19 @@ nav { padding: .8rem 1rem; }
     <div class="search-wrap">
       <input type="text" id="search-input" placeholder="Search posts…" oninput="filterPosts()">
     </div>
-    <button class="btn btn-ghost" onclick="openSourcesModal()" style="font-size:.7rem;padding:.4rem .8rem;">⚙ Sources</button>
-    <button class="btn btn-ghost" onclick="openKeyModal()" style="font-size:.7rem;padding:.4rem .8rem;" id="ai-btn">⚡ AI</button>
   </div>
 </nav>
 
 <main id="app"></main>
 <button id="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
-<!-- SOURCES MODAL -->
-
-<div class="modal-bg" id="sources-modal" style="display:none;">
-  <div class="modal">
-    <h2>Sources</h2>
-    <p>Add a name and raw JSON URL for each source. Name will appear as a label on each post.</p>
-    <div class="source-list" id="source-list"></div>
-    <button class="add-source-btn" onclick="addSourceRow()">+ Add Source</button>
-    <div class="modal-btns">
-      <button class="btn btn-ghost" onclick="closeSourcesModal()">Cancel</button>
-      <button class="btn" onclick="saveSources()">Save & Reload</button>
-    </div>
-  </div>
-</div>
-
-<!-- API KEY MODAL -->
-
-<div class="modal-bg" id="key-modal" style="display:none;">
-  <div class="modal">
-    <h2>AI Cleaning</h2>
-    <p>Enter your Anthropic API key to enable automatic typo and formatting fixes. Stored only in your browser's local storage.</p>
-    <input type="password" id="api-key-input" placeholder="sk-ant-…" />
-    <div class="modal-btns">
-      <button class="btn btn-danger" onclick="clearApiKey()" style="margin-right:auto;">Clear Key</button>
-      <button class="btn btn-ghost" onclick="closeKeyModal()">Cancel</button>
-      <button class="btn" onclick="saveApiKey()">Save & Enable</button>
-    </div>
-  </div>
-</div>
-
 <script>
 // ── DEFAULT SOURCES ─────────────────────────────────────────────
 const DEFAULT_SOURCES = [
-  { name: 'HipHopDX',  url: 'https://raw.githubusercontent.com/rileywallaceriley/blog/refs/heads/main/posts_hiphopdx.json' },
-  { name: 'AAHIPHOP',  url: 'https://raw.githubusercontent.com/rileywallaceriley/blog/refs/heads/main/aboveaverage_no_song_no_artist_titles.json' },
-  { name: 'Exclaim',   url: 'https://raw.githubusercontent.com/rileywallaceriley/blog/refs/heads/main/exclaim_formatted.json' },
-  { name: 'XXL',       url: 'https://raw.githubusercontent.com/rileywallaceriley/blog/refs/heads/main/xxl_formatted.json' },
+  { name: 'HipHopDX',  url: 'https://rileywallaceriley.github.io/blog/posts_hiphopdx.json' },
+  { name: 'AAHIPHOP',  url: 'https://rileywallaceriley.github.io/blog/aboveaverage_no_song_no_artist_titles.json' },
+  { name: 'Exclaim',   url: 'https://rileywallaceriley.github.io/blog/exclaim_formatted.json' },
+  { name: 'XXL',       url: 'https://rileywallaceriley.github.io/blog/xxl_formatted.json' },
 ];
 
 // ── STATE ───────────────────────────────────────────────────────
@@ -302,7 +270,7 @@ function getSources() {
   return DEFAULT_SOURCES;
 }
 
-function getApiKey() { return localStorage.getItem('rw_api_key') || ''; }
+function getApiKey() { return ''; } // AI cleaning removed with the key UI
 
 function updateAIBtn() {
   const btn = document.getElementById('ai-btn');
@@ -622,99 +590,55 @@ function parseXMLSource(xmlText, srcName) {
 async function loadAllSources() {
   const sources = getSources();
   allPosts = [];
-  setBar(10);
+  filteredPosts = [];
+  setBar(5);
+  let done = 0;
+  let deepLinked = false;
 
-  const results = await Promise.allSettled(
+  const tryDeepLink = () => {
+    const linkedPost = getHashPost();
+    if (!linkedPost) return false;
+    const post = allPosts.find(p => p.post_name === linkedPost);
+    if (!post) return false;
+    renderPost(post);
+    return true;
+  };
+
+  await Promise.allSettled(
     sources.map(async (src) => {
       try {
-        const cacheBust = src.url + (src.url.includes('?') ? '&' : '?') + '_=' + Date.now();
-        const res = await fetch(cacheBust);
-        if (!res.ok) return [];
-        const contentType = res.headers.get('content-type') || '';
-        const isXML = src.url.match(/\.xml(\?|$)/i) || contentType.includes('xml');
-        const isTXT = src.url.match(/\.txt(\?|$)/i);
-        if (isXML) {
-          const text = await res.text();
-          return parseXMLSource(text, src.name);
+        const res = await fetch(src.url);
+        if (res.ok) {
+          const contentType = res.headers.get('content-type') || '';
+          const isXML = src.url.match(/\.xml(\?|$)/i) || contentType.includes('xml');
+          const isTXT = src.url.match(/\.txt(\?|$)/i);
+          let posts = [];
+          if (isXML) {
+            posts = parseXMLSource(await res.text(), src.name);
+          } else if (isTXT) {
+            const text = await res.text();
+            try { const data = JSON.parse(text); posts = (Array.isArray(data) ? data : (data.posts || data.data || [])).map(p => ({ ...p, source: p.source || src.name })); }
+            catch { posts = parseXMLSource(text, src.name); }
+          } else {
+            const data = await res.json();
+            posts = (Array.isArray(data) ? data : (data.posts || data.data || [])).map(p => ({ ...p, source: p.source || src.name }));
+          }
+          allPosts.push(...posts);
+          allPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
+          filteredPosts = [...allPosts];
         }
-        if (isTXT) {
-          const text = await res.text();
-          try { const data = JSON.parse(text); return (Array.isArray(data) ? data : (data.posts || data.data || [])).map(p => ({ ...p, source: p.source || src.name })); }
-          catch { return parseXMLSource(text, src.name); }
-        }
-        const data = await res.json();
-        const posts = Array.isArray(data) ? data : (data.posts || data.data || []);
-        return posts.map(p => ({ ...p, source: p.source || src.name }));
-      } catch { return []; }
+      } catch { /* a failed source must not block the others */ }
+      done++;
+      setBar(5 + Math.round(95 * done / sources.length));
+      if (!deepLinked) {
+        if (tryDeepLink()) deepLinked = true;
+        else applyFilters();
+      }
     })
   );
 
-  results.forEach(r => { if (r.status === 'fulfilled') allPosts.push(...r.value); });
-  allPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
-  filteredPosts = [...allPosts];
+  if (!deepLinked && !tryDeepLink()) applyFilters();
   setBar(100);
-
-  // Check for deep-linked post
-  const linkedPost = getHashPost();
-  if (linkedPost) {
-    const post = allPosts.find(p => p.post_name === linkedPost);
-    if (post) { renderPost(post); return; }
-  }
-
-  applyFilters();
-}
-
-// ── SOURCES MODAL ───────────────────────────────────────────────
-function openSourcesModal() {
-  const sources = getSources();
-  const list = document.getElementById('source-list');
-  list.innerHTML = '';
-  sources.forEach(s => addSourceRow(s.name, s.url));
-  document.getElementById('sources-modal').style.display = 'flex';
-}
-function closeSourcesModal() { document.getElementById('sources-modal').style.display = 'none'; }
-
-function addSourceRow(name='', url='') {
-  const list = document.getElementById('source-list');
-  const row = document.createElement('div');
-  row.className = 'source-row';
-  row.innerHTML = `
-    <input type="text" placeholder="Name" value="${name}" style="width:120px;flex-shrink:0">
-    <input type="text" placeholder="https://raw.githubusercontent.com/…" value="${url}" style="flex:1">
-    <button onclick="this.parentElement.remove()">✕</button>`;
-  list.appendChild(row);
-}
-
-function saveSources() {
-  const rows = document.querySelectorAll('.source-row');
-  const sources = [];
-  rows.forEach(row => {
-    const inputs = row.querySelectorAll('input');
-    const name = inputs[0].value.trim();
-    const url  = inputs[1].value.trim();
-    if (name && url) sources.push({ name, url });
-  });
-  if (sources.length) {
-    localStorage.setItem('rw_sources', JSON.stringify(sources));
-    closeSourcesModal();
-    titleCache.clear(); contentCache.clear();
-    loadAllSources();
-  }
-}
-
-// ── API KEY MODAL ───────────────────────────────────────────────
-function openKeyModal() { document.getElementById('api-key-input').value = getApiKey(); document.getElementById('key-modal').style.display = 'flex'; }
-function closeKeyModal() { document.getElementById('key-modal').style.display = 'none'; }
-function saveApiKey() {
-  const key = document.getElementById('api-key-input').value.trim();
-  if (key) localStorage.setItem('rw_api_key', key);
-  closeKeyModal(); titleCache.clear(); contentCache.clear();
-  updateAIBtn(); renderIndex();
-}
-function clearApiKey() {
-  localStorage.removeItem('rw_api_key');
-  closeKeyModal(); titleCache.clear(); contentCache.clear();
-  updateAIBtn(); renderIndex();
 }
 
 // ── BACK / FORWARD ──────────────────────────────────────────────
