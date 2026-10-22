@@ -277,7 +277,7 @@ let allPosts      = [];
 let filteredPosts = [];
 let currentQuery  = '';
 let activeSource  = 'All';
-let activeCategory = 'Interview';
+let activeCategory = 'All';
 const CATEGORY_ORDER = { 'Interview': 0, 'Review': 1, 'Editorial': 2 };
 const CATEGORY_LABELS = { 'Interview': 'Interviews', 'Review': 'Reviews', 'Editorial': 'Editorial', 'All': 'All Categories' };
 function catOf(p) { return p.category || 'Editorial'; }
@@ -476,7 +476,7 @@ function goHome() {
   document.getElementById('search-input').value = '';
   currentQuery = '';
   activeSource = 'All';
-  activeCategory = 'Interview';
+  activeCategory = 'All';
   applyFilters();
 }
 
