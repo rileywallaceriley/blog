@@ -85,6 +85,12 @@ padding: .28rem .5rem; text-transform: uppercase;
 .masthead-pills { display: flex; gap: .75rem; justify-content: center; margin-top: 1rem; flex-wrap: wrap; }
 .masthead-pill { border: 1px solid #e8ff3b; color: #e8ff3b; background: transparent; cursor: pointer; font-family: ‘DM Sans’, sans-serif; font-size: .72rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; padding: .45rem 1.2rem; border-radius: 2px; transition: all .15s; }
 .masthead-pill:hover { background: #e8ff3b; color: #000; }
+.intro { max-width: 1200px; margin: 0 auto; padding: 1.6rem 2rem; display: flex; gap: 1.4rem; align-items: center; border-bottom: 1px solid #1f1f1f; }
+.intro-photo { width: 92px; height: 92px; border-radius: 50%; object-fit: cover; border: 2px solid #e8ff3b; flex-shrink: 0; }
+.intro-blurb { margin: 0; font-size: .98rem; line-height: 1.65; color: #c8c4bc; max-width: 760px; }
+.intro-more { background: none; border: none; padding: 0; margin-left: .5rem; color: #e8ff3b; font-family: 'DM Sans', sans-serif; font-size: .78rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; white-space: nowrap; }
+.intro-more:hover { text-decoration: underline; }
+@media (max-width: 700px) { .intro { flex-direction: column; text-align: center; padding: 1.4rem 1rem; } }
 .hs-banner { position: fixed; bottom: 0; left: 0; right: 0; background: #111; border-top: 1px solid #1f1f1f; display: flex; align-items: center; justify-content: space-between; padding: .9rem 1.5rem; z-index: 200; gap: 1rem; }
 .hs-banner p { font-size: .82rem; color: #888; margin: 0; }
 .hs-banner p strong { color: #e8ff3b; }
@@ -514,6 +520,7 @@ function renderIndex() {
   app.innerHTML = `
     <div id="view-index">
       <div class="masthead"><img src="https://raw.githubusercontent.com/rileywallaceriley/blog/main/logo.png" alt="Riley Wallace" class="masthead-logo"><div class="masthead-pills"><span class="masthead-pill">${subtitle}</span><button class="masthead-pill" onclick="openAbout()">About</button></div></div>
+      <div class="intro"><img class="intro-photo" src="https://hirerileywallace.com/riley-contact-portrait.png" alt="Riley Wallace"><p class="intro-blurb">Toronto-based writer, designer and creative strategist. I have published 1,000+ articles across HipHopDX, XXL and Exclaim! — this archive collects the interviews, reviews and editorials, including work preserved from publications whose own archives have disappeared.<button class="intro-more" onclick="openAbout()">Read more →</button></p></div>
       ${renderFilterBar()}
       <div class="grid-wrapper">
         ${count ? `<div class="post-grid">${cards}</div>` : `<div class="state-msg"><span>0</span>No posts match.</div>`}
@@ -795,7 +802,7 @@ loadAllSources();
   <div class="about-modal">
     <button class="about-close" onclick="closeAbout()">✕</button>
     <h2>About Riley Wallace</h2>
-    <p>Riley Wallace is a Toronto-based hip-hop journalist and music critic whose work has appeared in HipHopDX, Exclaim!, XXL Magazine and Above Average Hip Hop.</p>
+    <p>Riley Wallace is a Toronto-based hip-hop journalist and music critic whose work has appeared in HipHopDX, Exclaim!, XXL Magazine and Above Average Hip Hop.</p> <p>I bring stories, ideas and products to life through writing, design and editorial strategy. My work spans music and culture, business and technology, with more than 15 years of experience creating content and building things people can use.</p>
     <p>This archive collects selected writing published between 2014 and 2025, preserving interviews, reviews, editorials, and longform journalism spanning more than a decade of hip-hop coverage.</p>
     <p>Following the removal of HipHopDX's historical online archive — which resulted in the deletion of a significant volume of culturally important music journalism — this collection also serves as a preservation effort, safeguarding work from the site that would otherwise be lost.</p>
   </div>
