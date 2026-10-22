@@ -111,6 +111,13 @@ padding: .28rem .5rem; text-transform: uppercase;
 .about-modal { background: #111; border: 1px solid #1f1f1f; padding: 2.5rem; max-width: 560px; width: 100%; position: relative; }
 .about-modal h2 { font-family: ‘Bebas Neue’, sans-serif; font-size: 1.8rem; color: #e8ff3b; margin-bottom: 1.2rem; letter-spacing: .04em; }
 .about-modal p { font-size: .92rem; color: #aaa; line-height: 1.75; margin-bottom: 1rem; }
+.print-modal { max-width: 1080px; max-height: 88vh; overflow-y: auto; }
+.print-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1.4rem; margin-top: 1.2rem; }
+.print-item { margin: 0; }
+.print-item img { width: 100%; height: auto; display: block; border: 1px solid #2a2a2a; transition: border-color .15s; }
+.print-item a:hover img { border-color: #e8ff3b; }
+.print-cap { font-size: .8rem; color: #aaa; line-height: 1.55; margin-top: .55rem; }
+.print-cap strong { color: #e8ff3b; font-weight: 600; }
 .about-modal p:last-of-type { margin-bottom: 0; }
 .about-close { position: absolute; top: 1rem; right: 1rem; background: transparent; border: none; color: #555; font-size: 1.2rem; cursor: pointer; transition: color .15s; }
 .about-close:hover { color: #e8ff3b; }
@@ -491,7 +498,7 @@ function renderIndex() {
 
   if (allPosts.length === 0) {
     app.innerHTML = `
-      <div class="masthead"><img src="https://raw.githubusercontent.com/rileywallaceriley/blog/main/logo.png" alt="Riley Wallace" class="masthead-logo"><div class="masthead-pills"><span class="masthead-pill">0 Posts</span><button class="masthead-pill" onclick="openAbout()">About</button></div></div>
+      <div class="masthead"><img src="https://raw.githubusercontent.com/rileywallaceriley/blog/main/logo.png" alt="Riley Wallace" class="masthead-logo"><div class="masthead-pills"><span class="masthead-pill">0 Posts</span><button class="masthead-pill" onclick="openAbout()">About</button><button class="masthead-pill" onclick="openPrint()">Printed Work</button></div></div>
       <div class="state-msg"><span>NO DATA</span>Click <strong>⚙ Sources</strong> to configure your JSON files.</div>`;
     return;
   }
@@ -519,7 +526,7 @@ function renderIndex() {
 
   app.innerHTML = `
     <div id="view-index">
-      <div class="masthead"><img src="https://raw.githubusercontent.com/rileywallaceriley/blog/main/logo.png" alt="Riley Wallace" class="masthead-logo"><div class="masthead-pills"><span class="masthead-pill">${subtitle}</span><button class="masthead-pill" onclick="openAbout()">About</button></div></div>
+      <div class="masthead"><img src="https://raw.githubusercontent.com/rileywallaceriley/blog/main/logo.png" alt="Riley Wallace" class="masthead-logo"><div class="masthead-pills"><span class="masthead-pill">${subtitle}</span><button class="masthead-pill" onclick="openAbout()">About</button><button class="masthead-pill" onclick="openPrint()">Printed Work</button></div></div>
       <div class="intro"><img class="intro-photo" src="https://hirerileywallace.com/riley-contact-portrait.png" alt="Riley Wallace"><p class="intro-blurb">Toronto-based writer, designer and creative strategist. I have published 1,000+ articles across HipHopDX, XXL and Exclaim! — this archive collects the interviews, reviews and editorials, including work preserved from publications whose own archives have disappeared.<button class="intro-more" onclick="openAbout()">Read more →</button></p></div>
       ${renderFilterBar()}
       <div class="grid-wrapper">
@@ -756,6 +763,8 @@ function resetMeta() {
 
 // ── ABOUT MODAL ──────────────────────────────────────────────────
 function openAbout()  { document.getElementById('about-modal').style.display = 'flex'; }
+function openPrint()  { document.getElementById('print-modal').style.display = 'flex'; }
+function closePrint() { document.getElementById('print-modal').style.display = 'none'; }
 function closeAbout() { document.getElementById('about-modal').style.display = 'none'; }
 
 // ── HANDLE 404 REDIRECT ─────────────────────────────────────────
@@ -807,6 +816,30 @@ loadAllSources();
     <p>Following the removal of HipHopDX's historical online archive — which resulted in the deletion of a significant volume of culturally important music journalism — this collection also serves as a preservation effort, safeguarding work from the site that would otherwise be lost.</p>
   </div>
 </div>
+
+<!-- PRINT MODAL -->
+<div class="about-modal-bg" id="print-modal" style="display:none;" onclick="if(event.target===this)closePrint()">
+  <div class="about-modal print-modal">
+    <button class="about-close" onclick="closePrint()">✕</button>
+    <h2>Printed Work</h2>
+    <p>Selected pages from print editions — Exclaim! Magazine and Toronto Builder. The Exclaim! features pair the album review with a short Q&amp;A, as they ran in the magazine. Click any page to view it full-size.</p>
+    <div class="print-grid">
+      <figure class="print-item"><a href="print/toronto-builder-homebuyers-p25.jpg" target="_blank" rel="noopener"><img loading="lazy" src="print/toronto-builder-homebuyers-p25.jpg" alt="Toronto Builder magazine, Fall 2015, page 25"></a><figcaption class="print-cap"><strong>Toronto Builder</strong> — “Building Strong Relationships with Homebuyers” — Fall 2015, p. 25</figcaption></figure>
+      <figure class="print-item"><a href="print/toronto-builder-homebuyers-p27.jpg" target="_blank" rel="noopener"><img loading="lazy" src="print/toronto-builder-homebuyers-p27.jpg" alt="Toronto Builder magazine, Fall 2015, page 27"></a><figcaption class="print-cap"><strong>Toronto Builder</strong> — “Building Strong Relationships with Homebuyers” — Fall 2015, p. 27</figcaption></figure>
+      <figure class="print-item"><a href="print/exclaim-lex-leosis-mythologies.jpg" target="_blank" rel="noopener"><img loading="lazy" src="print/exclaim-lex-leosis-mythologies.jpg" alt="Exclaim magazine print page: Lex Leosis, The Next Chapter"></a><figcaption class="print-cap"><strong>Exclaim!</strong> — Lex Leosis — “The Next Chapter” (Mythologies review + Q&amp;A)</figcaption></figure>
+      <figure class="print-item"><a href="print/exclaim-keynes-woods-spotlight.jpg" target="_blank" rel="noopener"><img loading="lazy" src="print/exclaim-keynes-woods-spotlight.jpg" alt="Exclaim magazine print page: Keynes Woods, Spotlight Ready"></a><figcaption class="print-cap"><strong>Exclaim!</strong> — Keynes Woods — “Spotlight Ready” (Top Prospect feature)</figcaption></figure>
+      <figure class="print-item"><a href="print/exclaim-city-fidelia-painkiller.jpg" target="_blank" rel="noopener"><img loading="lazy" src="print/exclaim-city-fidelia-painkiller.jpg" alt="Exclaim magazine print page: City Fidelia, Capital Champion"></a><figcaption class="print-cap"><strong>Exclaim!</strong> — City Fidelia — “Capital Champion” (PainKiller review + Q&amp;A)</figcaption></figure>
+      <figure class="print-item"><a href="print/exclaim-junia-t-soleil-sound.jpg" target="_blank" rel="noopener"><img loading="lazy" src="print/exclaim-junia-t-soleil-sound.jpg" alt="Exclaim magazine print page: Junia-T at Soleil Sound studio"></a><figcaption class="print-cap"><strong>Exclaim!</strong> — Junia-T — inside Soleil Sound studio (Studio Monk feature)</figcaption></figure>
+      <figure class="print-item"><a href="print/exclaim-haviah-mighty-13th-floor.jpg" target="_blank" rel="noopener"><img loading="lazy" src="print/exclaim-haviah-mighty-13th-floor.jpg" alt="Exclaim magazine print page: Haviah Mighty, Strength in Difference"></a><figcaption class="print-cap"><strong>Exclaim!</strong> — Haviah Mighty — “Strength in Difference” (13th Floor feature)</figcaption></figure>
+      <figure class="print-item"><a href="print/exclaim-pvrx-314.jpg" target="_blank" rel="noopener"><img loading="lazy" src="print/exclaim-pvrx-314.jpg" alt="Exclaim magazine print page: PVRX, Rexdale Raised"></a><figcaption class="print-cap"><strong>Exclaim!</strong> — PVRX — “Rexdale Raised” (3:14 review + Q&amp;A)</figcaption></figure>
+      <figure class="print-item"><a href="print/exclaim-raekwon-the-wild.jpg" target="_blank" rel="noopener"><img loading="lazy" src="print/exclaim-raekwon-the-wild.jpg" alt="Exclaim magazine print page: Raekwon, Chefs Plate"></a><figcaption class="print-cap"><strong>Exclaim!</strong> — Raekwon — “Chef’s Plate” (The Wild review + Q&amp;A)</figcaption></figure>
+      <figure class="print-item"><a href="print/exclaim-skyzoo-in-celebration-of-us.jpg" target="_blank" rel="noopener"><img loading="lazy" src="print/exclaim-skyzoo-in-celebration-of-us.jpg" alt="Exclaim magazine print page: Skyzoo, Wizard of Wordplay"></a><figcaption class="print-cap"><strong>Exclaim!</strong> — Skyzoo — “Wizard of Wordplay” (In Celebration of Us review + Q&amp;A)</figcaption></figure>
+      <figure class="print-item"><a href="print/exclaim-brother-ali-all-the-beauty.jpg" target="_blank" rel="noopener"><img loading="lazy" src="print/exclaim-brother-ali-all-the-beauty.jpg" alt="Exclaim magazine print page: Brother Ali, Spiritual Path"></a><figcaption class="print-cap"><strong>Exclaim!</strong> — Brother Ali — “Spiritual Path” (All the Beauty in This Whole Life review + Q&amp;A)</figcaption></figure>
+      <figure class="print-item"><a href="print/exclaim-westside-gunn-supreme-blientele.jpg" target="_blank" rel="noopener"><img loading="lazy" src="print/exclaim-westside-gunn-supreme-blientele.jpg" alt="Exclaim magazine print page: Westside Gunn, Instant Classic"></a><figcaption class="print-cap"><strong>Exclaim!</strong> — Westside Gunn — “Instant Classic” (Supreme Blientele review + Q&amp;A)</figcaption></figure>
+    </div>
+  </div>
+</div>
+
 
 <script>
 if ('serviceWorker' in navigator) {
