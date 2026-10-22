@@ -547,7 +547,9 @@ function openPost(encodedName) {
 }
 
 async function renderPost(p) {
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
   window.scrollTo(0, 0);
+  requestAnimationFrame(() => window.scrollTo(0, 0));
   const hasKey = !!getApiKey();
   const cachedTitle   = titleCache.get(p.post_name) || p.title;
   const cachedContent = contentCache.get(p.post_name);
@@ -822,10 +824,10 @@ loadAllSources();
   <div class="about-modal print-modal">
     <button class="about-close" onclick="closePrint()">✕</button>
     <h2>Printed Work</h2>
-    <p>Selected pages from print editions — Exclaim! Magazine and Toronto Builder. The Exclaim! features pair the album review with a short Q&amp;A, as they ran in the magazine. Click any page to view it full-size.</p>
+    <p>Selected pages from the print edition of Exclaim! Magazine. Each feature pairs the album review with a short Q&amp;A, as they ran in the magazine. Click any page to view it full-size.</p>
     <div class="print-grid">
-      <figure class="print-item"><a href="print/toronto-builder-homebuyers-p25.jpg" target="_blank" rel="noopener"><img loading="lazy" src="print/toronto-builder-homebuyers-p25.jpg" alt="Toronto Builder magazine, Fall 2015, page 25"></a><figcaption class="print-cap"><strong>Toronto Builder</strong> — “Building Strong Relationships with Homebuyers” — Fall 2015, p. 25</figcaption></figure>
-      <figure class="print-item"><a href="print/toronto-builder-homebuyers-p27.jpg" target="_blank" rel="noopener"><img loading="lazy" src="print/toronto-builder-homebuyers-p27.jpg" alt="Toronto Builder magazine, Fall 2015, page 27"></a><figcaption class="print-cap"><strong>Toronto Builder</strong> — “Building Strong Relationships with Homebuyers” — Fall 2015, p. 27</figcaption></figure>
+      
+      
       <figure class="print-item"><a href="print/exclaim-lex-leosis-mythologies.jpg" target="_blank" rel="noopener"><img loading="lazy" src="print/exclaim-lex-leosis-mythologies.jpg" alt="Exclaim magazine print page: Lex Leosis, The Next Chapter"></a><figcaption class="print-cap"><strong>Exclaim!</strong> — Lex Leosis — “The Next Chapter” (Mythologies review + Q&amp;A)</figcaption></figure>
       <figure class="print-item"><a href="print/exclaim-keynes-woods-spotlight.jpg" target="_blank" rel="noopener"><img loading="lazy" src="print/exclaim-keynes-woods-spotlight.jpg" alt="Exclaim magazine print page: Keynes Woods, Spotlight Ready"></a><figcaption class="print-cap"><strong>Exclaim!</strong> — Keynes Woods — “Spotlight Ready” (Top Prospect feature)</figcaption></figure>
       <figure class="print-item"><a href="print/exclaim-city-fidelia-painkiller.jpg" target="_blank" rel="noopener"><img loading="lazy" src="print/exclaim-city-fidelia-painkiller.jpg" alt="Exclaim magazine print page: City Fidelia, Capital Champion"></a><figcaption class="print-cap"><strong>Exclaim!</strong> — City Fidelia — “Capital Champion” (PainKiller review + Q&amp;A)</figcaption></figure>
