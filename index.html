@@ -251,6 +251,7 @@ const DEFAULT_SOURCES = [
   { name: 'AAHIPHOP',  url: 'https://rileywallaceriley.github.io/blog/aboveaverage_no_song_no_artist_titles.json' },
   { name: 'Exclaim',   url: 'https://rileywallaceriley.github.io/blog/exclaim_formatted.json' },
   { name: 'XXL',       url: 'https://rileywallaceriley.github.io/blog/xxl_formatted.json' },
+  { name: 'Okayplayer', url: 'https://rileywallaceriley.github.io/blog/okayplayer_formatted.json' },
 ];
 
 // ── STATE ───────────────────────────────────────────────────────
@@ -435,13 +436,7 @@ function applyFilters() {
       (p.clean_content || p.content || '').toLowerCase().includes(q);
     return matchSource && matchCategory && matchQuery;
   });
-  if (activeCategory === 'All') {
-    filteredPosts.sort((a, b) =>
-      ((CATEGORY_ORDER[catOf(a)] ?? 2) - (CATEGORY_ORDER[catOf(b)] ?? 2)) ||
-      (new Date(b.date) - new Date(a.date)));
-  } else {
-    filteredPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
-  }
+  filteredPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
   renderIndex();
 }
 
