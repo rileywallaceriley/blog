@@ -433,8 +433,7 @@ function applyFilters() {
     const matchSource = activeSource === 'All' || p.source === activeSource;
     const matchCategory = activeCategory === 'All' || catOf(p) === activeCategory;
     const matchQuery  = !q ||
-      p.title.toLowerCase().includes(q) ||
-      (p.clean_content || p.content || '').toLowerCase().includes(q);
+      p.title.toLowerCase().replace(/-/g,' ').includes(q.replace(/-/g,' '));
     return matchSource && matchCategory && matchQuery;
   });
   filteredPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
