@@ -324,6 +324,7 @@ function getHashPost() {
   // Legacy hash support
   const h = window.location.hash;
   if (h.startsWith('#post/')) return decodeURIComponent(h.slice(6));
+  if (h.length > 1) return decodeURIComponent(h.slice(1));
   return null;
 }
 
@@ -661,7 +662,10 @@ function openHSModal()  { document.getElementById('hs-modal').style.display = 'f
 function closeHSModal() { document.getElementById('hs-modal').style.display = 'none'; }
 
 if (sessionStorage.getItem('hs_dismissed')) {
-  document.getElementById('hs-banner').style.display = 'none';
+  window.addEventListener('DOMContentLoaded', () => {
+    const b = document.getElementById('hs-banner');
+    if (b) b.style.display = 'none';
+  });
 }
 
 // ── META ─────────────────────────────────────────────────────────
